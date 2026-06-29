@@ -1,0 +1,11 @@
+vehicle_id,plate,vehicle_class,capacity_kg,current_load,fuel_level,fuel_capacity,fuel_rate,zone,available,assigned_route,driver_id,total_distance,lifetime_km,needs_maintenance,maintenance_due_km,status
+1,TN-01-AA-1001,normal,8000,0.0,96.8,100,0.120,Zone-North,1,0,1,14.8,90,0,150,idle
+2,TN-01-BB-2002,normal,6000,0.0,85.7,100,0.120,Zone-Central,1,0,2,66.1,134,0,150,idle
+3,TN-01-CC-3003,hazardous,4000,0.0,95.5,100,0.100,Zone-Central,1,0,3,25.3,50,0,150,idle
+4,TN-01-DD-4004,normal,10000,0.0,120.0,120,0.150,Zone-South,1,0,4,0.0,53,0,150,idle
+5,TN-01-EE-5005,normal,5000,0.0,98.9,100,0.120,Zone-NorthEast,1,0,5,5.1,15,0,150,idle
+6,TN-01-FF-6006,special,7000,0.0,83.3,100,0.130,Zone-West,1,0,6,71.4,145,0,150,idle
+7,TN-01-GG-7007,normal,6000,0.0,94.3,100,0.120,Zone-SWest,1,0,7,26.3,156,0,150,idle
+8,TN-01-HH-8008,normal,8000,0.0,92.0,100,0.120,Zone-NWest,1,0,8,37.0,74,0,150,idle
+9,TN-02-II-9009,hazardous,3000,0.0,76.5,80,0.100,Zone-NWest,1,0,9,19.5,76,0,150,idle
+10,TN-02-JJ-0010,special,9000,0.0,115.5,120,0.140,Zone-South,1,0,10,18.0,77,0,150,idle

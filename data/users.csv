@@ -1,0 +1,3 @@
+username,password,role,active
+admin,admin123,0,1
+operator,op123,1,1

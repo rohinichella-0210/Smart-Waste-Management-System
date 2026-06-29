@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart Waste Management — Chennai</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#0f1117;--card:#1a1d2e;--card2:#20243a;--accent:#00d4aa;--danger:#ff4d6d;--warn:#ffd166;--info:#60a5fa;--text:#e2e8f0;--muted:#718096;--border:#2d3748;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+header{background:var(--card);border-bottom:2px solid var(--accent);padding:.6rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+header h1{color:var(--accent);font-size:1.1rem;display:flex;align-items:center;gap:.5rem;}
+.hright{display:flex;align-items:center;gap:.6rem;font-size:.75rem;}
+.htag{background:#252840;padding:.25rem .6rem;border-radius:5px;color:var(--muted);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.layout{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:190px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar nav{flex:1;overflow-y:auto;padding:.5rem 0;}
+.sidebar h3{color:var(--muted);font-size:.6rem;letter-spacing:2px;text-transform:uppercase;padding:.4rem 1rem .2rem;}
+.nav-btn{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;background:none;border:none;color:var(--text);padding:.55rem 1rem;cursor:pointer;font-size:.82rem;border-left:3px solid transparent;transition:.15s;}
+.nav-btn:hover,.nav-btn.active{background:rgba(0,212,170,.1);border-left-color:var(--accent);color:var(--accent);}
+.sidebar-foot{padding:.75rem;border-top:1px solid var(--border);}
+.content{flex:1;overflow-y:auto;padding:1.2rem;background:var(--bg);}
+.section{display:none;}.section.active{display:block;}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.section-header h2{font-size:1.1rem;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.6rem;margin-bottom:1.2rem;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.9rem .8rem;text-align:center;}
+.kpi .val{font-size:1.7rem;font-weight:700;color:var(--accent);line-height:1.1;}
+.kpi .lbl{font-size:.65rem;color:var(--muted);margin-top:.2rem;text-transform:uppercase;letter-spacing:.5px;}
+.kpi .sub{font-size:.7rem;color:var(--muted);margin-top:.1rem;}
+.kpi.warn .val{color:var(--warn);}.kpi.danger .val{color:var(--danger);}.kpi.info .val{color:var(--info);}
+.kpi.alert-flash{animation:aflash 1.5s infinite;}
+@keyframes aflash{0%,100%{border-color:var(--border)}50%{border-color:var(--danger);background:#2a0d15;}}
+.tbl-wrap{background:var(--card);border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+th{background:#252840;color:var(--muted);font-size:.67rem;text-transform:uppercase;padding:.55rem .75rem;text-align:left;white-space:nowrap;}
+td{padding:.55rem .75rem;border-top:1px solid var(--border);font-size:.8rem;vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,.025);}
+.badge{display:inline-flex;align-items:center;padding:.15rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;white-space:nowrap;}
+.b-normal{background:#1a3a2a;color:#4ade80;}.b-high{background:#3a2a00;color:var(--warn);}
+.b-critical{background:#3a1000;color:#ff8a65;}.b-overflow{background:#3a0015;color:var(--danger);}
+.b-done{background:#1a2540;color:var(--info);}.b-emg{background:#3a0015;color:var(--danger);border:1px solid var(--danger);}
+.b-idle{background:#1a3a2a;color:#4ade80;}.b-collecting{background:#3a2a00;color:var(--warn);}
+.b-maintenance{background:#3a1000;color:#ff8a65;}.b-hazard{background:#2a1a3a;color:#c084fc;}
+.b-vandal{background:#3a1a00;color:#fb923c;}.b-citizen{background:#1a2a3a;color:var(--info);}
+.btn{padding:.45rem 1rem;border:none;border-radius:7px;cursor:pointer;font-weight:600;font-size:.8rem;transition:.15s;display:inline-flex;align-items:center;gap:.35rem;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#000;}.btn-primary:hover:not(:disabled){background:#00b894;}
+.btn-danger{background:var(--danger);color:#fff;}.btn-warn{background:var(--warn);color:#000;}
+.btn-blue{background:var(--info);color:#000;}.btn-ghost{background:#252840;color:var(--text);}
+.btn-purple{background:#7c3aed;color:#fff;}
+.btn-sm{padding:.3rem .65rem;font-size:.72rem;}
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.6rem;background:var(--card);padding:1.1rem;border-radius:10px;margin-bottom:.8rem;border:1px solid var(--border);}
+.fg label{font-size:.68rem;color:var(--muted);display:block;margin-bottom:.2rem;text-transform:uppercase;}
+input,select,textarea{background:#252840;border:1px solid var(--border);color:var(--text);padding:.4rem .65rem;border-radius:6px;font-size:.8rem;width:100%;}
+input:focus,select:focus{outline:none;border-color:var(--accent);}
+.fa{display:flex;gap:.5rem;margin-bottom:.9rem;flex-wrap:wrap;}
+.sim-panel{background:var(--card);border:2px solid var(--accent);border-radius:12px;padding:1.3rem;margin-bottom:1.2rem;}
+.sim-panel h2{color:var(--accent);margin-bottom:.8rem;}
+.sim-result{display:none;margin-top:1rem;background:#0a1a12;border:1px solid #00d4aa33;border-radius:10px;padding:1.1rem;}
+.sim-result.show{display:block;}
+.route-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.9rem;margin-bottom:.7rem;}
+.route-path{color:var(--accent);font-size:.75rem;margin-top:.4rem;line-height:1.6;word-break:break-all;}
+.route-meta{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.5rem;font-size:.72rem;color:var(--muted);}
+.fbar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;width:60px;display:inline-block;vertical-align:middle;}
+.fbar-i{height:100%;border-radius:3px;transition:width .4s;}
+#map-wrapper{display:flex;flex-direction:column;height:calc(100vh - 120px);}
+#map{flex:1;border-radius:12px;border:1px solid var(--border);min-height:300px;}
+.map-controls{display:flex;gap:.5rem;align-items:center;font-size:.72rem;flex-wrap:wrap;padding-bottom:.5rem;}
+.log-level-INFO{color:var(--info);}.log-level-WARN{color:var(--warn);}
+.log-level-ERROR{color:var(--danger);}.log-level-EVENT{color:var(--accent);}
+.report-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-bottom:.8rem;}
+.report-card h3{color:var(--accent);font-size:.9rem;margin-bottom:.8rem;border-bottom:1px solid var(--border);padding-bottom:.5rem;}
+.report-row{display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid #252840;font-size:.82rem;}
+.report-row:last-child{border:none;}.report-row .rval{color:var(--accent);font-weight:600;}
+.prog-wrap{margin:.4rem 0;}
+.prog-label{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.2rem;}
+.prog-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;transition:width .5s;}
+.spin{width:14px;height:14px;border:2px solid rgba(0,212,170,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rtick{font-size:.62rem;color:var(--accent);background:rgba(0,212,170,.1);padding:.15rem .4rem;border-radius:3px;}
+.rtick.flash{background:rgba(0,212,170,.4);}
+.toast{position:fixed;bottom:1.2rem;right:1.2rem;background:var(--card);border:1px solid var(--accent);border-radius:10px;padding:.8rem 1.2rem;font-size:.82rem;z-index:9999;max-width:320px;display:none;box-shadow:0 4px 20px rgba(0,0,0,.5);}
+.toast.show{display:block;animation:slidein .3s ease;}
+@keyframes slidein{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+#login-overlay{position:fixed;inset:0;background:#0a0d16;z-index:10000;display:flex;align-items:center;justify-content:center;}
+.login-box{background:var(--card);border:2px solid var(--accent);border-radius:16px;padding:2.5rem;width:340px;text-align:center;}
+.login-box h2{color:var(--accent);margin-bottom:.4rem;font-size:1.4rem;}
+.login-box p{color:var(--muted);font-size:.8rem;margin-bottom:1.5rem;}
+.login-box input{margin-bottom:.8rem;}
+#login-err{color:var(--danger);font-size:.78rem;margin-top:.5rem;display:none;}
+#sim-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:8000;display:none;align-items:center;justify-content:center;}
+#sim-overlay.show{display:flex;}
+.sim-popup{background:var(--card);border:2px solid var(--accent);border-radius:16px;width:min(920px,96vw);max-height:92vh;overflow:hidden;display:flex;flex-direction:column;}
+.sim-popup-header{padding:1rem 1.4rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sim-popup-header h3{color:var(--accent);}
+#sim-popup-map{flex:1;min-height:360px;}
+.sim-popup-status{padding:.7rem 1.4rem;background:#0a1a12;border-top:1px solid var(--border);font-size:.78rem;flex-shrink:0;}
+.citizen-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.9rem;margin-bottom:.6rem;}
+.citizen-card.urgent{border-color:var(--danger);}
+.citizen-card.moderate{border-color:var(--warn);}
+.rtype-overflow{color:var(--danger);}.rtype-vandalized{color:#fb923c;}
+.rtype-hazard{color:#c084fc;}.rtype-full{color:var(--warn);}
+.role-badge{padding:.2rem .6rem;border-radius:5px;font-size:.7rem;font-weight:700;}
+.role-admin{background:#1e2a50;color:var(--info);}
+.role-operator{background:#1a3a2a;color:#4ade80;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN — credentials NOT shown here. See separate credentials document. -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div style="font-size:2.5rem;margin-bottom:.5rem">🗑️</div>
+    <h2>Smart Waste System</h2>
+    <p>Chennai Municipal Corporation</p>
+    <input type="text" id="login-user" placeholder="Username" autocomplete="username">
+    <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.4rem" onclick="doLogin()">Sign In</button>
+    <div id="login-err">Invalid credentials. Please try again.</div>
+  </div>
+</div>
+
+<!-- SIMULATION POPUP -->
+<div id="sim-overlay">
+  <div class="sim-popup">
+    <div class="sim-popup-header">
+      <h3>🚛 Live Truck Simulation</h3>
+      <div style="display:flex;gap:.6rem;align-items:center">
+        <span id="sim-popup-progress" style="font-size:.78rem;color:var(--muted)">Initialising...</span>
+        <div class="spin" id="sim-popup-spin"></div>
+        <button class="btn btn-ghost btn-sm" onclick="closeSimPopup()" style="margin-left:.5rem">✕ Close</button>
+      </div>
+    </div>
+    <div id="sim-popup-map"></div>
+    <div class="sim-popup-status" id="sim-popup-status">Preparing routes...</div>
+  </div>
+</div>
+
+<header>
+  <h1>🗑️ Smart Waste Management System <span style="font-size:.75rem;color:var(--muted);font-weight:400">Chennai</span></h1>
+  <div class="hright">
+    <span id="user-badge" class="role-badge role-admin" style="display:none"></span>
+    <span class="htag" id="hday">—</span>
+    <span class="htag" id="hclock">—</span>
+    <span class="htag" id="hsim-count">Sims: 0</span>
+    <div class="live-dot"></div>
+    <span style="color:var(--accent);font-size:.72rem">LIVE</span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" id="logout-btn" style="display:none">⏻ Logout</button>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="sidebar">
+  <div style="padding:.5rem;">
+    <input id="search-bins" placeholder="🔍 Search bins..." style="width:100%;font-size:.75rem;padding:.35rem .6rem;" oninput="filterBinsTable(this.value)">
+  </div>
+  <nav>
+    <h3>Monitor</h3>
+    <button class="nav-btn active" onclick="show('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="show('map-view',this)">🗺️ Live Map</button>
+    <button class="nav-btn" onclick="show('log-view',this)">📋 Activity Log</button>
+    <h3>Operations</h3>
+    <button class="nav-btn" onclick="show('simulate',this)">▶ Simulate</button>
+    <button class="nav-btn" onclick="show('routes',this)">🚗 Routes</button>
+    <button class="nav-btn" onclick="show('emergency',this)">🚨 Emergency</button>
+    <button class="nav-btn" onclick="show('citizen',this)">📢 Citizen Reports</button>
+    <h3>Manage</h3>
+    <button class="nav-btn" onclick="show('bins',this)" id="nav-bins">🗑️ Bins</button>
+    <button class="nav-btn" onclick="show('vehicles',this)" id="nav-vehicles">🚛 Vehicles</button>
+    <button class="nav-btn" onclick="show('drivers',this)" id="nav-drivers">👤 Drivers</button>
+    <h3>Analytics</h3>
+    <button class="nav-btn" onclick="show('reports',this)">📈 Reports</button>
+  </nav>
+  <div class="sidebar-foot">
+    <button class="btn btn-warn btn-sm" style="width:100%;margin-bottom:.4rem" onclick="newDay()">🌅 New Day Reset</button>
+    <button class="btn btn-ghost btn-sm" style="width:100%" onclick="show('facilities',this)">🏭 Facilities</button>
+  </div>
+</nav>
+
+<div class="content">
+
+<!-- DASHBOARD -->
+<div class="section active" id="s-dashboard">
+  <div class="section-header">
+    <h2>Dashboard <span class="rtick" id="rtick">↻ auto</span></h2>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <span id="dash-day" style="font-size:.75rem;color:var(--muted)"></span>
+      <button class="btn btn-primary btn-sm" onclick="loadDashboard()">Refresh</button>
+    </div>
+  </div>
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi"><div class="val" id="k-bins">—</div><div class="lbl">Total Bins</div></div>
+    <div class="kpi warn"><div class="val" id="k-crit">—</div><div class="lbl">Critical</div></div>
+    <div class="kpi danger"><div class="val" id="k-over">—</div><div class="lbl">Overflow</div></div>
+    <div class="kpi"><div class="val" id="k-col">—</div><div class="lbl">Collected Today</div></div>
+    <div class="kpi" id="k-breakdown-card"><div class="val" id="k-veh">—</div><div class="lbl">Available Trucks</div><div class="sub" id="k-veh-sub"></div></div>
+    <div class="kpi info"><div class="val" id="k-drv">—</div><div class="lbl">Drivers</div></div>
+    <div class="kpi warn"><div class="val" id="k-cost">—</div><div class="lbl">Today Cost ₹</div></div>
+    <div class="kpi"><div class="val" id="k-fuel">—</div><div class="lbl">Fuel Used L</div></div>
+    <div class="kpi danger" id="k-emg-card"><div class="val" id="k-emg">0</div><div class="lbl">Emergencies</div></div>
+    <div class="kpi"><div class="val" id="k-sim">—</div><div class="lbl">Simulations</div></div>
+    <div class="kpi"><div class="val" id="k-dist">—</div><div class="lbl">km Today</div></div>
+    <div class="kpi" style="border-color:#c084fc33"><div class="val" id="k-co2" style="color:#c084fc">—</div><div class="lbl">CO₂ kg</div></div>
+    <div class="kpi danger" id="k-brk-card"><div class="val" id="k-brk">0</div><div class="lbl">Breakdowns</div></div>
+    <div class="kpi" style="border-color:var(--warn)33"><div class="val" id="k-citizen" style="color:var(--warn)">—</div><div class="lbl">Citizen Reports</div></div>
+    <div class="kpi" style="border-color:#c084fc55"><div class="val" id="k-hazard" style="color:#c084fc">—</div><div class="lbl">☢️ Hazardous Bins</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1.2rem;">
+    <div class="report-card" style="margin:0">
+      <h3>♻️ Waste Type Breakdown (Today)</h3>
+      <div class="prog-wrap"><div class="prog-label"><span>🟤 Dry (Recyclable)</span><span id="wt-dry">0 kg</span></div><div class="prog-bar"><div class="prog-fill" id="pb-dry" style="background:#4ade80;width:0%"></div></div></div>
+      <div class="prog-wrap"><div class="prog-label"><span>💧 Wet</span><span id="wt-wet">0 kg</span></div><div class="prog-bar"><div class="prog-fill" id="pb-wet" style="background:#60a5fa;width:0%"></div></div></div>
+      <div class="prog-wrap"><div class="prog-label"><span>🔀 Mixed</span><span id="wt-mix">0 kg</span></div><div class="prog-bar"><div class="prog-fill" id="pb-mix" style="background:#ffd166;width:0%"></div></div></div>
+      <div class="prog-wrap"><div class="prog-label"><span>☢️ Hazardous</span><span id="wt-haz">0 kg</span></div><div class="prog-bar"><div class="prog-fill" id="pb-haz" style="background:#c084fc;width:0%"></div></div></div>
+    </div>
+    <div class="report-card" style="margin:0">
+      <h3>🗑️ Bin Status Snapshot</h3>
+      <div id="dash-bin-snap" style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem;font-size:.75rem;"></div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+    <h3 style="font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">All Bins</h3>
+  </div>
+  <div class="tbl-wrap">
+  <table><thead><tr><th>#</th><th>ID</th><th>Location</th><th>Zone</th><th>Fill</th><th>Type</th><th>Waste Kind</th><th>Priority</th><th>Tomorrow</th><th>Reports</th><th>Collected</th></tr></thead>
+  <tbody id="dash-bins-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- MAP VIEW — heatmap integrated, free scroll/zoom -->
+<div class="section" id="s-map-view">
+  <div class="section-header"><h2>🗺️ Chennai Live Map</h2></div>
+  <div id="map-wrapper">
+    <div class="map-controls">
+      <span><span style="color:#4ade80">●</span> Normal</span>
+      <span><span style="color:var(--warn)">●</span> High</span>
+      <span><span style="color:#ff8a65">●</span> Critical</span>
+      <span><span style="color:var(--danger)">●</span> Overflow</span>
+      <span><span style="color:#c084fc">☢</span> Hazardous</span>
+      <span><span style="color:#c084fc">★</span> Facility</span>
+      <div style="width:1px;height:18px;background:var(--border);"></div>
+      <button class="btn btn-primary btn-sm" onclick="refreshMap()">🔄 Refresh</button>
+      <button class="btn btn-sm" id="heatmap-toggle-btn"
+        style="background:#1a0a2a;border:1px solid #c084fc44;color:#c084fc;"
+        onclick="toggleHeatmapOnMap()">🔥 Heatmap: OFF</button>
+      <button class="btn btn-ghost btn-sm" onclick="mapFitAll()">⊕ Fit All</button>
+      <span style="font-size:.7rem;color:var(--muted)">Scroll to zoom · Drag to pan</span>
+    </div>
+    <div id="map"></div>
+  </div>
+</div>
+
+<!-- ACTIVITY LOG -->
+<div class="section" id="s-log-view">
+  <div class="section-header">
+    <h2>📋 Activity Log</h2>
+    <div style="display:flex;gap:.5rem;">
+      <select id="log-filter" onchange="loadLog()" style="width:120px;">
+        <option value="">All</option><option value="EVENT">Events</option>
+        <option value="WARN">Warnings</option><option value="INFO">Info</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="loadLog()">🔄 Refresh</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+  <table><thead><tr><th>Time</th><th>Level</th><th>Module</th><th>Message</th></tr></thead>
+  <tbody id="log-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- SIMULATE — description paragraph removed, threshold guard added -->
+<div class="section" id="s-simulate">
+  <div class="sim-panel">
+    <h2>▶ Run Collection Simulation</h2>
+    <div style="background:#1a2a1a;border:1px solid #00d4aa44;border-radius:8px;padding:.8rem;margin-bottom:1rem;font-size:.82rem;color:var(--muted);">
+      ℹ️ Simulation only runs when bins are at 50%+ fill. If bins are all low, add waste first or click <strong>New Day Reset</strong> to simulate overnight accumulation.
+    </div>
+    <div style="display:flex;gap:.8rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:.8rem;">
+      <div><label style="display:block;font-size:.7rem;color:var(--muted);margin-bottom:.25rem;text-transform:uppercase">Fuel Price (₹/L)</label>
+        <input type="number" id="fuel-price" value="1.20" step="0.05" min="0.1" style="width:100px"></div>
+      <button class="btn btn-primary" id="sim-btn" onclick="runSim()">🚀 SIMULATE NOW</button>
+      <button class="btn btn-warn" onclick="newDay()">🌅 New Day Reset</button>
+    </div>
+    <div class="sim-result" id="sim-result"></div>
+  </div>
+</div>
+
+<!-- ROUTES -->
+<div class="section" id="s-routes">
+  <div class="section-header">
+    <h2>🚗 Routes</h2>
+    <div style="display:flex;gap:.5rem;">
+      <button class="btn btn-primary btn-sm" onclick="loadRoutes()">🔄 Refresh</button>
+      <button class="btn btn-danger btn-sm" onclick="clearRoutes()">Clear Completed</button>
+    </div>
+  </div>
+  <div id="route-cards"><p style="color:var(--muted)">Run simulation to generate routes.</p></div>
+</div>
+
+<!-- EMERGENCY — "Add Waste" section removed. Hazardous dispatch added. -->
+<div class="section" id="s-emergency">
+  <h2 style="margin-bottom:.6rem;">🚨 Emergency Dispatch</h2>
+  <div style="margin-bottom:1rem;background:#1a0505;border:1px solid var(--danger)33;border-radius:8px;padding:.8rem;font-size:.8rem;color:#ff8a65;">
+    Emergency dispatch immediately assigns a vehicle, bypassing normal scheduling. To add waste to a bin, use the <strong>Bins</strong> page.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div style="background:var(--card);padding:1.2rem;border-radius:10px;border:1px solid var(--danger);">
+      <h3 style="color:var(--danger);margin-bottom:.8rem;">⚠️ Standard Dispatch</h3>
+      <div style="margin-bottom:.7rem;"><label style="display:block;font-size:.7rem;color:var(--muted);margin-bottom:.25rem;text-transform:uppercase">Bin ID</label>
+        <input type="number" id="emg-bin" placeholder="e.g. 13"></div>
+      <div style="margin-bottom:.9rem;"><label style="display:block;font-size:.7rem;color:var(--muted);margin-bottom:.25rem;text-transform:uppercase">Reason</label>
+        <input type="text" id="emg-reason" value="overflow"></div>
+      <button class="btn btn-danger" style="width:100%" onclick="doEmergency()">🚨 DISPATCH NOW</button>
+      <div id="emg-result" style="display:none;margin-top:.8rem;padding:.7rem;border-radius:8px;font-size:.8rem;"></div>
+    </div>
+    <div style="background:var(--card);padding:1.2rem;border-radius:10px;border:1px solid #c084fc55;">
+      <h3 style="color:#c084fc;margin-bottom:.8rem;">☢️ Hazardous Dispatch</h3>
+      <p style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem;">Dispatches only a hazardous-certified vehicle. Used for bins with dangerous waste.</p>
+      <div style="margin-bottom:.9rem;"><label style="display:block;font-size:.7rem;color:var(--muted);margin-bottom:.25rem;text-transform:uppercase">Bin ID</label>
+        <input type="number" id="hemg-bin" placeholder="e.g. 7"></div>
+      <button class="btn btn-purple" style="width:100%" onclick="doHazardousEmergency()">☢️ HAZARDOUS DISPATCH</button>
+      <div id="hemg-result" style="display:none;margin-top:.8rem;padding:.7rem;border-radius:8px;font-size:.8rem;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CITIZEN REPORTS -->
+<div class="section" id="s-citizen">
+  <div class="section-header">
+    <h2>📢 Citizen Reports</h2>
+    <button class="btn btn-primary btn-sm" onclick="loadCitizenReports()">🔄 Refresh</button>
+  </div>
+  <div class="kpi-grid" style="margin-bottom:1rem;">
+    <div class="kpi"><div class="val" id="ck-total">—</div><div class="lbl">Total Reports</div></div>
+    <div class="kpi warn"><div class="val" id="ck-open">—</div><div class="lbl">Open</div></div>
+    <div class="kpi"><div class="val" id="ck-resolved">—</div><div class="lbl">Resolved</div></div>
+    <div class="kpi danger"><div class="val" id="ck-dispatched">—</div><div class="lbl">Dispatched</div></div>
+    <div class="kpi" style="border-color:#c084fc33"><div class="val" id="ck-hazard" style="color:#c084fc">—</div><div class="lbl">Hazard</div></div>
+    <div class="kpi" style="border-color:#fb923c33"><div class="val" id="ck-vandal" style="color:#fb923c">—</div><div class="lbl">Vandalized Bins</div></div>
+  </div>
+  <details style="margin-bottom:1rem;" open>
+    <summary style="cursor:pointer;font-size:.85rem;color:var(--accent);padding:.6rem .9rem;background:var(--card);border-radius:10px;border:1px solid var(--border);font-weight:600;">📝 Submit Citizen Report</summary>
+    <div style="margin-top:.5rem;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:1.2rem;">
+      <div class="fg" style="background:transparent;border:none;padding:0;">
+        <div><label>Bin ID *</label><input type="number" id="cr-bin" placeholder="e.g. 5"></div>
+        <div><label>Report Type *</label>
+          <select id="cr-type">
+            <option value="0">🔴 Overflow</option><option value="1">🟠 Vandalized</option>
+            <option value="2">☢️ Hazard</option><option value="3">🟡 Full</option>
+          </select>
+        </div>
+        <div><label>Your Name</label><input type="text" id="cr-name" placeholder="Anonymous"></div>
+        <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem;background:#1a2a1a;border-radius:6px;border:1px solid var(--accent)">
+          <span style="font-size:.8rem">🚨</span>
+          <span style="font-size:.72rem;color:var(--accent);font-weight:600">Vehicle dispatched immediately on submit</span>
+        </div>
+        <div style="grid-column:1/-1"><label>Description</label><input type="text" id="cr-desc" placeholder="Describe the issue..."></div>
+      </div>
+      <div class="fa" style="margin-bottom:0;">
+        <button class="btn btn-purple" onclick="submitCitizenReport()">📤 Submit Report</button>
+        <span id="cr-result" style="font-size:.8rem;color:var(--accent);align-self:center;"></span>
+      </div>
+    </div>
+  </details>
+  <div style="display:flex;gap:.5rem;margin-bottom:.8rem;">
+    <select id="cr-filter" onchange="loadCitizenReports()" style="width:180px;font-size:.78rem;">
+      <option value="">All types</option><option value="overflow">🔴 Overflow</option>
+      <option value="vandalized">🟠 Vandalized</option><option value="hazard">☢️ Hazard</option>
+      <option value="full">🟡 Full</option>
+    </select>
+    <select id="cr-status" onchange="loadCitizenReports()" style="width:150px;font-size:.78rem;">
+      <option value="">All status</option><option value="open">Open only</option><option value="resolved">Resolved</option>
+    </select>
+  </div>
+  <div id="citizen-list"><p style="color:var(--muted)">Loading...</p></div>
+</div>
+
+<!-- BINS — add waste includes Normal/Hazardous selector -->
+<div class="section" id="s-bins">
+  <div class="section-header">
+    <h2>🗑️ Bin Management</h2>
+    <button class="btn btn-primary btn-sm" onclick="loadBinsTable()">🔄 Refresh</button>
+  </div>
+  <details style="margin-bottom:.8rem;" id="add-bin-section">
+    <summary style="cursor:pointer;font-size:.82rem;color:var(--accent);padding:.5rem;background:var(--card);border-radius:8px;border:1px solid var(--border);">+ Add New Bin</summary>
+    <div style="margin-top:.5rem;">
+    <div class="fg">
+      <div><label>Bin ID*</label><input id="b-id" type="number" placeholder="101"></div>
+      <div><label>Location*</label><input id="b-loc" placeholder="Anna Nagar Park"></div>
+      <div><label>Zone*</label><input id="b-zone" placeholder="Zone-North"></div>
+      <div><label>Waste Type</label><select id="b-type"><option>dry</option><option>wet</option><option>mixed</option><option>hazardous</option></select></div>
+      <div><label>Capacity (kg)</label><input id="b-cap" type="number" value="500"></div>
+      <div><label>Fill Level (%)</label><input id="b-fill" type="number" value="0" min="0" max="100"></div>
+      <div><label>Threshold (%)</label><input id="b-thresh" type="number" value="75"></div>
+      <div><label>Latitude</label><input id="b-lat" type="number" step="0.0001" placeholder="13.0827"></div>
+      <div><label>Longitude</label><input id="b-lon" type="number" step="0.0001" placeholder="80.2707"></div>
+      <div><label>Fill Rate (%/day)</label><input id="b-rate" type="number" value="10"></div>
+    </div>
+    <div class="fa"><button class="btn btn-primary" onclick="addBin()">+ Add Bin</button></div>
+    </div>
+  </details>
+  <!-- Add Waste with Normal/Hazardous selection -->
+  <details style="margin-bottom:.8rem;" open>
+    <summary style="cursor:pointer;font-size:.82rem;color:var(--warn);padding:.5rem;background:var(--card);border-radius:8px;border:1px solid var(--border);">⚡ Add Waste to Existing Bin</summary>
+    <div style="background:var(--card2);padding:1rem;border-radius:8px;margin-top:.5rem;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.8rem;margin-bottom:.8rem;">
+        <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Bin ID</label><input id="bw-bin" type="number" placeholder="1"></div>
+        <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Waste (kg)</label><input id="bw-kg" type="number" placeholder="50"></div>
+        <div>
+          <label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Waste Kind *</label>
+          <select id="bw-kind" onchange="onWasteKindChange()">
+            <option value="normal">🗑️ Normal</option>
+            <option value="hazardous">☢️ Hazardous</option>
+          </select>
+        </div>
+      </div>
+      <div id="hazard-warning" style="display:none;background:#1e0a2a;border:1px solid #c084fc55;border-radius:8px;padding:.7rem;margin-bottom:.7rem;font-size:.78rem;color:#c084fc;">
+        ☢️ <strong>Hazardous waste flagged.</strong> This bin will require a certified hazardous vehicle for collection. It will be routed to the Manali Hazardous Site.
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;">
+        <button class="btn btn-warn btn-sm" onclick="addWasteToBin()">➕ Add Waste</button>
+        <span id="bw-result" style="font-size:.78rem;color:var(--accent);"></span>
+      </div>
+    </div>
+  </details>
+  <div class="tbl-wrap">
+  <table><thead><tr><th>#</th><th>Priority #</th><th>ID</th><th>Location</th><th>Zone</th><th>Fill</th><th>Capacity</th><th>Type</th><th>Hazardous?</th><th>Threshold</th><th>Priority</th><th>Reports</th><th>Fill Rate</th><th>Collected</th><th>Actions</th></tr></thead>
+  <tbody id="bins-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- VEHICLES -->
+<div class="section" id="s-vehicles">
+  <div class="section-header">
+    <h2>🚛 Vehicle Management</h2>
+    <button class="btn btn-primary btn-sm" onclick="loadVehiclesTable()">🔄 Refresh</button>
+  </div>
+  <details style="margin-bottom:.8rem;" id="add-vehicle-section">
+    <summary style="cursor:pointer;font-size:.82rem;color:var(--accent);padding:.5rem;background:var(--card);border-radius:8px;border:1px solid var(--border);">+ Add New Vehicle</summary>
+    <div style="margin-top:.5rem;">
+    <div class="fg">
+      <div><label>Vehicle ID*</label><input id="v-id" type="number" placeholder="11"></div>
+      <div><label>Plate*</label><input id="v-plate" placeholder="TN-03-AA-1111"></div>
+      <div><label>Class</label><select id="v-class"><option>normal</option><option>special</option><option>hazardous</option></select></div>
+      <div><label>Capacity (kg)</label><input id="v-cap" type="number" value="5000"></div>
+      <div><label>Fuel Level (L)</label><input id="v-fuel" type="number" value="80"></div>
+      <div><label>Fuel Capacity (L)</label><input id="v-fcap" type="number" value="100"></div>
+      <div><label>Fuel Rate (L/km)</label><input id="v-frate" type="number" value="0.12" step="0.01"></div>
+      <div><label>Zone</label><input id="v-zone" placeholder="Zone-North"></div>
+      <div><label>Driver ID</label><input id="v-driver" type="number" value="0"></div>
+      <div><label>Maintenance (km)</label><input id="v-maint" type="number" value="500"></div>
+      <div><label>Hazard Capable?</label><select id="v-hazard"><option value="0">No</option><option value="1">Yes ☢️</option></select></div>
+    </div>
+    <div class="fa"><button class="btn btn-primary" onclick="addVehicle()">+ Add Vehicle</button></div>
+    </div>
+  </details>
+  <div style="background:var(--card);padding:.9rem;border-radius:10px;border:1px solid var(--border);margin-bottom:.8rem;display:flex;gap:.8rem;align-items:flex-end;flex-wrap:wrap;">
+    <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Vehicle ID</label><input id="rf-vid" type="number" placeholder="1" style="width:80px;"></div>
+    <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Litres</label><input id="rf-l" type="number" placeholder="50" style="width:80px;"></div>
+    <button class="btn btn-warn btn-sm" onclick="refuelVehicle()">⛽ Refuel</button>
+    <div style="width:1px;height:30px;background:var(--border);"></div>
+    <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Service Vehicle ID</label><input id="svc-vid" type="number" placeholder="1" style="width:80px;"></div>
+    <button class="btn btn-blue btn-sm" onclick="serviceVehicle()">🔧 Mark Serviced</button>
+    <button class="btn btn-danger btn-sm" onclick="resetAllVehicles()" style="margin-left:auto">↺ Reset All Vehicles</button>
+  </div>
+  <div class="tbl-wrap">
+  <table><thead><tr><th>ID</th><th>Plate</th><th>Class</th><th>Zone</th><th>Load</th><th>Fuel</th><th>CO₂ kg</th><th>Status</th><th>Hazard</th><th>Maint.</th><th>Lifetime km</th><th>Actions</th></tr></thead>
+  <tbody id="vehicles-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- DRIVERS -->
+<div class="section" id="s-drivers">
+  <div class="section-header">
+    <h2>👤 Driver Management</h2>
+    <div style="display:flex;gap:.5rem;">
+      <button class="btn btn-primary btn-sm" onclick="loadDriversTable()">🔄 Refresh</button>
+      <button class="btn btn-blue btn-sm" onclick="redistributeShifts()">⚖️ Balance Shifts</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetAllDrivers()">↺ Reset Hours</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:.6rem;margin-bottom:.8rem;" id="shift-summary"></div>
+  <details style="margin-bottom:.8rem;" id="add-driver-section">
+    <summary style="cursor:pointer;font-size:.82rem;color:var(--accent);padding:.5rem;background:var(--card);border-radius:8px;border:1px solid var(--border);">+ Add New Driver</summary>
+    <div style="margin-top:.5rem;">
+    <div class="fg">
+      <div><label>Driver ID*</label><input id="d-id" type="number" placeholder="16"></div>
+      <div><label>Name*</label><input id="d-name" placeholder="Driver Name"></div>
+      <div><label>License</label><input id="d-lic" placeholder="TN2024DL10016"></div>
+      <div><label>Shift</label><select id="d-shift"><option value="">Auto-assign</option><option>morning</option><option>evening</option></select></div>
+      <div><label>Is Substitute?</label><select id="d-sub"><option value="0">No (Regular)</option><option value="1">Yes (Substitute)</option></select></div>
+      <div><label>Vehicle ID</label><input id="d-vid" type="number" value="0"></div>
+      <div><label>Salary/hr (₹)</label><input id="d-sal" type="number" value="15"></div>
+      <div><label>Max Hours</label><input id="d-maxh" type="number" value="8"></div>
+    </div>
+    <div class="fa"><button class="btn btn-primary" onclick="addDriver()">+ Add Driver</button></div>
+    </div>
+  </details>
+  <!-- Driver absence management -->
+  <details style="margin-bottom:.8rem;">
+    <summary style="cursor:pointer;font-size:.82rem;color:var(--warn);padding:.5rem;background:var(--card);border-radius:8px;border:1px solid var(--border);">⚠ Mark Driver Absent / Return from Leave</summary>
+    <div style="background:var(--card2);padding:1rem;border-radius:8px;margin-top:.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <div style="font-size:.75rem;color:var(--warn);font-weight:600;margin-bottom:.6rem">MARK ON LEAVE</div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;">
+          <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Driver ID</label><input id="leave-did" type="number" placeholder="1" style="width:70px;"></div>
+          <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Reason</label>
+            <select id="leave-reason" style="width:110px;font-size:.75rem;">
+              <option value="sick">Sick</option><option value="personal">Personal</option>
+              <option value="holiday">Holiday</option><option value="emergency">Emergency</option>
+            </select>
+          </div>
+          <button class="btn btn-warn btn-sm" onclick="markDriverLeave()">Mark Absent</button>
+          <span id="leave-result" style="font-size:.75rem;color:var(--accent);align-self:center;"></span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:.75rem;color:var(--accent);font-weight:600;margin-bottom:.6rem">RETURN FROM LEAVE</div>
+        <div style="display:flex;gap:.5rem;align-items:flex-end;">
+          <div><label style="display:block;font-size:.68rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase">Driver ID</label><input id="return-did" type="number" placeholder="1" style="width:70px;"></div>
+          <button class="btn btn-primary btn-sm" onclick="markDriverReturn()">Mark Returned</button>
+          <span id="return-result" style="font-size:.75rem;color:var(--accent);align-self:center;"></span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:.6rem;padding:.6rem;background:var(--card);border-radius:8px;border:1px solid var(--border);">
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.5px">Current Absences</div>
+      <div id="absence-list" style="font-size:.78rem;color:var(--text)">Loading...</div>
+    </div>
+  </details>
+  <div class="tbl-wrap">
+  <table><thead><tr><th>ID</th><th>Name</th><th>Shift</th><th>Type</th><th>Vehicle</th><th>Hours</th><th>Max H</th><th>Overtime</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody id="drivers-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- REPORTS -->
+<div class="section" id="s-reports">
+  <div class="section-header"><h2>📈 Reports</h2>
+    <button class="btn btn-primary btn-sm" onclick="loadAllReports()">🔄 Refresh All</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
+    <div class="report-card" id="rpt-daily"><h3>📅 Daily Summary</h3><p style="color:var(--muted);font-size:.78rem">Loading...</p></div>
+    <div class="report-card" id="rpt-fuel"><h3>⛽ Fuel Report</h3><p style="color:var(--muted);font-size:.78rem">Loading...</p></div>
+    <div class="report-card" id="rpt-cost"><h3>💰 Cost Report</h3><p style="color:var(--muted);font-size:.78rem">Loading...</p></div>
+    <div class="report-card" id="rpt-recycling"><h3>♻️ Waste & Carbon</h3><p style="color:var(--muted);font-size:.78rem">Loading...</p></div>
+    <div class="report-card" id="rpt-zone" style="grid-column:1/-1"><h3>📍 Zone Report</h3></div>
+    <div class="report-card" id="rpt-maint" style="grid-column:1/-1"><h3>🔧 Maintenance Report</h3></div>
+  </div>
+</div>
+
+<!-- FACILITIES -->
+<div class="section" id="s-facilities">
+  <div class="section-header"><h2>🏭 Facilities</h2></div>
+  <div class="tbl-wrap">
+  <table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Latitude</th><th>Longitude</th></tr></thead>
+  <tbody id="fac-tbl"></tbody></table>
+  </div>
+</div>
+
+</div><!-- content -->
+</div><!-- layout -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API='';
+let mapObj=null,mapLayers=[],showHeatmapLayer=false,heatmapCircles=[];
+let autoRefreshTimer=null;
+let currentRole='operator',currentUser='';
+
+async function api(method,path,body){
+  try{
+    const o={method,headers:{'Content-Type':'application/json'}};
+    if(body)o.body=JSON.stringify(body);
+    const r=await fetch(API+path,o);
+    return await r.json();
+  }catch(e){return{error:e.message};}
+}
+
+function toast(msg,type='info'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.borderColor=type==='error'?'var(--danger)':type==='warn'?'var(--warn)':'var(--accent)';
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── Login ──
+async function doLogin(){
+  const user=document.getElementById('login-user').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!user||!pass){document.getElementById('login-err').style.display='block';return;}
+  const r=await api('POST','/api/auth/login',{username:user,password:pass});
+  if(r.logged_in){
+    currentRole=r.role_name;currentUser=r.username;
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('logout-btn').style.display='';
+    const ub=document.getElementById('user-badge');
+    ub.textContent=`${r.role_name==='admin'?'👑':'👷'} ${r.username}`;
+    ub.className='role-badge role-'+(r.role_name==='admin'?'admin':'operator');
+    ub.style.display='';
+    applyRolePermissions(r.role_name);
+    loadDashboard();startAutoRefresh();
+    toast('Welcome, '+r.username+'!');
+  }else{
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('login-pass').value='';
+  }
+}
+async function doLogout(){await api('POST','/api/auth/logout');location.reload();}
+function applyRolePermissions(role){
+  if(role!=='admin'){
+    ['add-bin-section','add-vehicle-section','add-driver-section'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    });
+  }
+}
+
+// ── Clock ──
+function tick(){
+  const n=new Date();
+  document.getElementById('hclock').textContent=n.toLocaleTimeString('en-IN');
+  document.getElementById('hday').textContent=n.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+}
+tick();setInterval(tick,1000);
+
+// ── Navigation ──
+function show(sec,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+sec).classList.add('active');
+  if(btn&&btn.classList)btn.classList.add('active');
+  const m={
+    'dashboard':loadDashboard,
+    'map-view':()=>setTimeout(()=>{initMap();refreshMap();},100),
+    'bins':loadBinsTable,'vehicles':loadVehiclesTable,'drivers':loadDriversTable,
+    'routes':loadRoutes,'reports':loadAllReports,'log-view':loadLog,
+    'facilities':loadFacilities,'citizen':loadCitizenReports,
+  };
+  if(m[sec])m[sec]();
+}
+
+// ── Auto-refresh ──
+function startAutoRefresh(){
+  autoRefreshTimer=setInterval(async()=>{
+    const active=document.querySelector('.section.active');
+    if(!active)return;
+    if(active.id==='s-dashboard'){
+      loadDashboard();
+      const tk=document.getElementById('rtick');
+      if(tk){tk.classList.add('flash');setTimeout(()=>tk.classList.remove('flash'),400);}
+    }
+    if(active.id==='s-map-view')refreshMap();
+    if(active.id==='s-log-view')loadLog();
+    if(active.id==='s-citizen')loadCitizenReports();
+  },8000);
+}
+
+// ── Dashboard ──
+async function loadDashboard(){
+  const ds=await api('GET','/api/dashboard');
+  if(ds.error)return;
+  document.getElementById('k-bins').textContent=ds.total_bins??'—';
+  document.getElementById('k-crit').textContent=ds.critical_bins??'—';
+  document.getElementById('k-over').textContent=ds.overflow_bins??'—';
+  document.getElementById('k-col').textContent=ds.bins_collected_today??'—';
+  document.getElementById('k-veh').textContent=ds.available_vehicles??'—';
+  document.getElementById('k-veh-sub').textContent=`of ${ds.total_vehicles??'—'} total`;
+  document.getElementById('k-drv').textContent=ds.total_drivers??'—';
+  document.getElementById('k-cost').textContent='₹'+(ds.total_cost?.toFixed(0)??'—');
+  document.getElementById('k-fuel').textContent=(ds.fuel_used?.toFixed(1)??'—');
+  document.getElementById('k-sim').textContent=ds.simulations_run??'—';
+  document.getElementById('k-dist').textContent=(ds.total_distance?.toFixed(1)??'—');
+  document.getElementById('k-co2').textContent=(ds.co2_total_kg?.toFixed(1)??'0.0');
+  document.getElementById('hsim-count').textContent=`Sims: ${ds.simulations_run??0}`;
+  const emg=ds.emergency_alerts??0;
+  document.getElementById('k-emg').textContent=emg;
+  document.getElementById('k-emg-card').className='kpi'+(emg>0?' danger alert-flash':'');
+  if(ds.current_day)document.getElementById('dash-day').textContent='📅 '+ds.current_day;
+  const total=(ds.dry_kg||0)+(ds.wet_kg||0)+(ds.mixed_kg||0)+(ds.hazardous_kg||0)+(ds.general_kg||0);
+  const pct=v=>total>0?Math.round(v/total*100):0;
+  [['dry',ds.dry_kg],['wet',ds.wet_kg],['mix',ds.mixed_kg],['haz',ds.hazardous_kg]].forEach(([k,v])=>{
+    document.getElementById('wt-'+k).textContent=(v||0).toFixed(0)+' kg';
+    document.getElementById('pb-'+k).style.width=pct(v||0)+'%';
+  });
+  const cs=await api('GET','/api/citizen/summary');
+  if(cs&&!cs.error)document.getElementById('k-citizen').textContent=cs.open??0;
+  const bins=await api('GET','/api/bins');
+  if(!bins||bins.error)return;
+  document.getElementById('k-hazard').textContent=bins.filter(b=>b.waste_type==='hazardous').length;
+  const snap={0:0,1:0,2:0,3:0};
+  bins.forEach(b=>snap[b.priority]=(snap[b.priority]||0)+1);
+  document.getElementById('dash-bin-snap').innerHTML=
+    ['NORMAL','HIGH','CRITICAL','OVERFLOW'].map((label,i)=>{
+      const cols=['#1a3a2a','#3a2a00','#3a1000','#3a0015'];
+      const txts=['#4ade80','var(--warn)','#ff8a65','var(--danger)'];
+      return `<div style="background:${cols[i]};border-radius:6px;padding:.5rem;text-align:center"><div style="font-size:1.3rem;color:${txts[i]};font-weight:700">${snap[i]}</div><div style="font-size:.65rem;color:var(--muted)">${label}</div></div>`;
+    }).join('');
+  const PL={0:'b-normal',1:'b-high',2:'b-critical',3:'b-overflow'};
+  const PN={0:'Normal',1:'High',2:'Critical',3:'Overflow'};
+  const WB2={dry:'#1a3a2a',wet:'#1a2540',mixed:'#3a2a00',hazardous:'#2a1a3a'};
+  const WT2={dry:'#4ade80',wet:'#60a5fa',mixed:'#ffd166',hazardous:'#c084fc'};
+  const tb=document.getElementById('dash-bins-tbl');tb.innerHTML='';
+  /* Sort by priority_order */
+  const sortedB=[...bins].sort((a,b2)=>(a.priority_order||999)-(b2.priority_order||999));
+  sortedB.forEach(b=>{
+    const p=b.priority??0;const pct2=Math.min(100,b.fill_level||0);
+    const col=pct2>=90?'#ff4d6d':pct2>=70?'#ffd166':'#00d4aa';
+    const wt=b.waste_type||'mixed';
+    const wBg=WB2[wt]||WB2.mixed; const wTx=WT2[wt]||WT2.mixed;
+    const orderCircle=b.priority_order?`<span style="display:inline-block;min-width:20px;height:20px;line-height:20px;text-align:center;background:#252840;border-radius:50%;font-weight:700;font-size:.7rem;color:var(--accent)">${b.priority_order}</span>`:'—';
+    tb.innerHTML+=`<tr><td>${orderCircle}</td><td><strong>${b.bin_id}</strong></td><td>${b.location}</td><td>${b.zone}</td>
+      <td><div style="display:flex;align-items:center;gap:.4rem"><div class="fbar"><div class="fbar-i" style="width:${pct2}%;background:${col}"></div></div><span>${pct2.toFixed(1)}%</span></div></td>
+      <td><span style="background:${wBg};color:${wTx};padding:.12rem .4rem;border-radius:4px;font-size:.63rem;font-weight:700">${wt.toUpperCase()}</span></td>
+      <td><span class="badge ${PL[p]}">${PN[p]}</span></td>
+      <td>${(b.predicted_fill||0).toFixed(1)}%</td>
+      <td>${b.citizen_report_count>0?`<span class="badge b-citizen">${b.citizen_report_count}</span>`:'—'}</td>
+      <td>${b.collected_today?'<span style="color:var(--accent)">✓</span>':'—'}</td></tr>`;
+  });
+}
+
+// ── Map — free scroll/zoom, heatmap integrated ──
+function initMap(){
+  if(mapObj)return;
+  mapObj=L.map('map',{
+    zoomControl:true,scrollWheelZoom:true,doubleClickZoom:true,
+    dragging:true,touchZoom:true,zoomSnap:0.5
+  }).setView([13.0827,80.2707],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors',maxZoom:19
+  }).addTo(mapObj);
+}
+
+function mapFitAll(){
+  if(!mapObj||mapLayers.length===0)return;
+  try{mapObj.fitBounds(L.featureGroup(mapLayers).getBounds().pad(0.1));}catch(e){}
+}
+
+// Route colours — bright, distinct, never matches map tile yellow
+const ROUTE_COLORS=['#00e5ff','#69f0ae','#ea80fc','#ff6e40','#40c4ff','#b9f6ca','#ff4081','#ffab40'];
+
+async function refreshMap(){
+  if(!mapObj)initMap();
+  mapLayers.forEach(l=>mapObj.removeLayer(l));mapLayers=[];
+  heatmapCircles.forEach(l=>mapObj.removeLayer(l));heatmapCircles=[];
+  const facs=await api('GET','/api/facilities');
+  if(facs&&!facs.error){
+    const fi={garage:'🏭',disposal:'🗑️',recycling:'♻️',hazardous:'☢️'};
+    facs.forEach(f=>{
+      const m=L.marker([f.lat,f.lon],{icon:L.divIcon({className:'',
+        html:`<div style="font-size:22px;filter:drop-shadow(0 1px 4px #000)">${fi[f.type]||'🏭'}</div>`,
+        iconSize:[28,28],iconAnchor:[14,14]})}).addTo(mapObj);
+      m.bindPopup(`<b>${f.name}</b><br>${f.type}`);mapLayers.push(m);
+    });
+  }
+  const bins=await api('GET','/api/bins');
+  if(!bins||bins.error)return;
+  const icons={0:'🟢',1:'🟡',2:'🟠',3:'🔴'};
+  bins.forEach(b=>{
+    if(!b.lat||!b.lon)return;
+    const extra=b.is_vandalized?'🔨':b.waste_type==='hazardous'?'☢️':'';
+    const ico=L.divIcon({className:'',
+      html:`<div style="font-size:18px;filter:drop-shadow(0 1px 4px #000)">${icons[b.priority]||'🟢'}${extra}</div>`,
+      iconSize:[28,22],iconAnchor:[14,11]});
+    const m=L.marker([b.lat,b.lon],{icon:ico}).addTo(mapObj);
+    const pct=(b.fill_level||0).toFixed(1);
+    const col=pct>=90?'#ff4d6d':pct>=70?'#ffd166':'#00d4aa';
+    const hazInfo=b.waste_type==='hazardous'?`<br><span style="color:#c084fc;font-weight:700">☢️ Hazardous — certified vehicle required</span>`:'';
+    m.bindPopup(`<b>Bin ${b.bin_id}</b> — ${b.location}<br>Zone: ${b.zone}<br>Fill: <b>${pct}%</b>
+      <div style="height:6px;background:#333;border-radius:3px;margin:4px 0">
+        <div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div></div>${hazInfo}
+      ${b.collected_today?'<span style="color:#4ade80">✓ Collected today</span>':''}`);
+    mapLayers.push(m);
+  });
+  if(showHeatmapLayer)await drawHeatmapCircles(bins);
+  const routes=await api('GET','/api/routes');
+  if(!routes||routes.error)return;
+  const facs2=facs||[];
+  routes.filter(r=>!r.completed).forEach((r,ri)=>{
+    let pts=[];
+    const garage=facs2.find(f=>f.type==='garage');
+    if(garage)pts.push([garage.lat,garage.lon]);
+    (r.bins||[]).forEach(bid=>{
+      const b=bins.find(x=>x.bin_id===bid);
+      if(b&&b.lat&&b.lon)pts.push([b.lat,b.lon]);
+    });
+    const disp=facs2.find(f=>f.name===r.disposal_site);
+    if(disp)pts.push([disp.lat,disp.lon]);
+    if(garage)pts.push([garage.lat,garage.lon]);
+    if(pts.length>2){
+      const col=r.has_hazardous?'#c084fc':r.emergency?'#ff4d6d':ROUTE_COLORS[ri%ROUTE_COLORS.length];
+      // White outline first for contrast
+      L.polyline(pts,{color:'#fff',weight:6,opacity:.2}).addTo(mapObj);
+      const ln=L.polyline(pts,{color:col,weight:3,opacity:.9,dashArray:r.has_hazardous?'8,4':null}).addTo(mapObj);
+      ln.bindTooltip(`Route #${r.route_id} | V${r.vehicle_id} | ${r.bin_count} bins${r.has_hazardous?' | ☢️':''}`,{sticky:true});
+      mapLayers.push(ln);
+    }
+  });
+  mapObj.invalidateSize();
+}
+
+async function drawHeatmapCircles(bins){
+  /* Draw circles directly on each bin that is critical (priority>=2) or overflow (priority==3)
+     Colour: orange=critical, red=overflow/high-fill */
+  bins.forEach(b=>{
+    if(!b.lat||!b.lon) return;
+    if(b.priority < 1) return;
+    const fill = b.fill_level || 0;
+    let col, radius, opacity;
+    if(b.priority >= 3 || fill >= 95){
+      col='#ff4d6d'; radius=900; opacity=0.30;
+    } else if(b.priority === 2 || fill >= 80){
+      col='#ff8c42'; radius=700; opacity=0.25;
+    } else {
+      col='#ffd166'; radius=500; opacity=0.20;
+    }
+    const c=L.circle([b.lat,b.lon],{
+      radius, color:col, fillColor:col,
+      fillOpacity:opacity, weight:2, opacity:0.80
+    }).addTo(mapObj);
+    c.bindTooltip(
+      `🔥 Bin ${b.bin_id} | ${b.location} | ${fill.toFixed(1)}% full | ${['Normal','High','Critical','Overflow'][b.priority]}`,
+      {sticky:true}
+    );
+    heatmapCircles.push(c);
+  });
+}
+
+async function toggleHeatmapOnMap(){
+  showHeatmapLayer=!showHeatmapLayer;
+  const btn=document.getElementById('heatmap-toggle-btn');
+  btn.style.background=showHeatmapLayer?'#2a1a3a':'#1a0a2a';
+  btn.textContent=`🔥 Heatmap: ${showHeatmapLayer?'ON':'OFF'}`;
+  await refreshMap();
+  toast(showHeatmapLayer?'Heatmap overlay ON':'Heatmap overlay OFF');
+}
+
+// ── New Day Reset ──
+async function newDay(){
+  if(!confirm('Apply New Day Reset?\n\nThis will:\n• Simulate overnight bin filling\n• Refuel all vehicles to 80%\n• Rest all drivers\n• Redistribute shifts\n• Clear completed routes'))return;
+  const r=await api('POST','/api/newday');
+  toast(r.message||'New day applied','info');
+  loadDashboard();
+  toast('New day complete — bins have filled overnight','info');
+}
+
+// ── Threshold check before simulation ──
+async function checkSimThreshold(){
+  const bins=await api('GET','/api/bins');
+  if(!bins||bins.error)return{allowed:true};
+  const uncollected=bins.filter(b=>!b.collected_today);
+  if(!uncollected.length)return{allowed:false,reason:'All bins are collected. Do a New Day reset to continue.'};
+  const near=uncollected.filter(b=>(b.fill_level||0)>=70);
+  if(!near.length){
+    const mx=Math.max(...uncollected.map(b=>b.fill_level||0));
+    return{allowed:false,reason:`Threshold not reached — highest fill is ${mx.toFixed(1)}%. Bins must be ≥70% to trigger collection. Add waste or click 🌅 New Day Reset.`};
+  }
+  return{allowed:true,nearCount:near.length};
+}
+
+// ── Realistic truck SVG ──
+const TRUCK_COLORS=['#00e5ff','#ff4081','#69f0ae','#ff6e40','#ea80fc','#f4ff81','#40c4ff','#b9f6ca'];
+
+function makeTruckSvg(col,label){
+  return `<div style="position:relative;">
+    <svg width="56" height="32" viewBox="0 0 56 32" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 8px rgba(0,0,0,.8))">
+      <rect x="2" y="8" width="32" height="16" rx="2" fill="${col}" stroke="#fff" stroke-width="1.2"/>
+      <rect x="2" y="8" width="32" height="5" rx="2" fill="rgba(255,255,255,.25)"/>
+      <rect x="34" y="5" width="18" height="19" rx="3" fill="${col}" stroke="#fff" stroke-width="1.2"/>
+      <rect x="35" y="7" width="9" height="9" rx="1.5" fill="#0a1a2a" opacity="0.9"/>
+      <rect x="46" y="7" width="4" height="9" rx="1" fill="#0a1a2a" opacity="0.7"/>
+      <circle cx="10" cy="26" r="4.5" fill="#111" stroke="#888" stroke-width="1.5"/>
+      <circle cx="10" cy="26" r="2" fill="#444"/>
+      <circle cx="26" cy="26" r="4" fill="#111" stroke="#888" stroke-width="1.5"/>
+      <circle cx="26" cy="26" r="1.8" fill="#444"/>
+      <circle cx="43" cy="26" r="4.5" fill="#111" stroke="#888" stroke-width="1.5"/>
+      <circle cx="43" cy="26" r="2" fill="#444"/>
+      <rect x="52" y="15" width="3" height="8" rx="1" fill="#aaa"/>
+      <circle cx="52" cy="8" r="2" fill="rgba(200,200,200,.45)"/>
+      <circle cx="54" cy="5" r="1.2" fill="rgba(200,200,200,.3)"/>
+    </svg>
+    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+      background:${col};color:#000;padding:1px 5px;border-radius:3px;
+      font-size:9px;font-weight:800;white-space:nowrap;
+      box-shadow:0 1px 4px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.4)">${label}</div>
+  </div>`;
+}
+
+// ── Simulation ──
+async function runSim(){
+  const check=await checkSimThreshold();
+  if(!check.allowed){
+    const res=document.getElementById('sim-result');
+    res.classList.add('show');
+    res.innerHTML=`<div style="padding:1rem;background:#0a1a0a;border:1px solid var(--accent);border-radius:8px;">
+      <div style="font-size:1.1rem;margin-bottom:.5rem">🟢 All Bins Are Fine</div>
+      <p style="color:var(--warn);font-size:.88rem">${check.reason}</p>
+    </div>`;
+    toast('Simulation blocked — bins not near threshold','warn');
+    return;
+  }
+  const btn=document.getElementById('sim-btn');
+  btn.innerHTML='<span class="spin"></span> Running...';btn.disabled=true;
+  const fp=parseFloat(document.getElementById('fuel-price').value)||1.20;
+  openSimPopup();
+  const r=await api('POST','/api/simulate',{fuel_price:fp});
+  if(r.success){
+    const steps=await api('GET','/api/sim/steps');
+    if(steps&&!steps.error&&steps.length>0)await animateTrucks(steps);
+    else closeSimPopup();
+    const res=document.getElementById('sim-result');
+    res.classList.add('show');
+    res.innerHTML=`<div class="kpi-grid" style="margin-bottom:.7rem">
+      <div class="kpi"><div class="val">${r.routes_run}</div><div class="lbl">Routes</div></div>
+      <div class="kpi"><div class="val">${r.bins_collected}</div><div class="lbl">Bins</div></div>
+      <div class="kpi warn"><div class="val">${r.total_distance?.toFixed(1)}</div><div class="lbl">km</div></div>
+      <div class="kpi warn"><div class="val">${r.fuel_used?.toFixed(2)}</div><div class="lbl">Fuel L</div></div>
+      <div class="kpi danger"><div class="val">₹${r.total_cost?.toFixed(0)}</div><div class="lbl">Total Cost</div></div>
+      <div class="kpi" style="border-color:#c084fc33"><div class="val" style="color:#c084fc">${(r.fuel_used?r.fuel_used*2.68:0).toFixed(1)}</div><div class="lbl">CO₂ kg</div></div>
+    </div><p style="color:var(--muted);font-size:.78rem">${r.message}</p>`;
+    toast('Simulation complete: '+r.bins_collected+' bins collected');
+    /* Reload bins and recompute live priority order */
+    allBins=await api('GET','/api/bins');
+    if(allBins&&!allBins.error){recomputePriorityOrder(allBins);renderBinsTable(allBins);}
+    else loadBinsTable();
+  }else{
+    closeSimPopup();
+    const res=document.getElementById('sim-result');
+    res.classList.add('show');
+    res.innerHTML=`<p style="color:var(--danger)">${r.message||r.error||'Failed'}</p>`;
+    toast(r.message||'Simulation failed','error');
+  }
+  btn.innerHTML='🚀 SIMULATE NOW';btn.disabled=false;
+  loadDashboard();
+}
+
+let simPopupMap=null,simTruckMarkers={};
+function openSimPopup(){
+  document.getElementById('sim-overlay').classList.add('show');
+  document.getElementById('sim-popup-status').textContent='Running simulation...';
+  document.getElementById('sim-popup-progress').textContent='Computing routes...';
+  const s=document.getElementById('sim-popup-spin');if(s)s.style.display='';
+  setTimeout(()=>{
+    if(!simPopupMap){
+      simPopupMap=L.map('sim-popup-map',{zoomControl:true,scrollWheelZoom:true}).setView([13.0827,80.2707],12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(simPopupMap);
+    }else simPopupMap.invalidateSize();
+    Object.values(simTruckMarkers).forEach(m=>simPopupMap.removeLayer(m));
+    simTruckMarkers={};
+  },200);
+}
+function closeSimPopup(){
+  document.getElementById('sim-overlay').classList.remove('show');
+  const s=document.getElementById('sim-popup-spin');if(s)s.style.display='none';
+}
+
+async function animateTrucks(steps){
+  if(!simPopupMap){closeSimPopup();return;}
+  simPopupMap.invalidateSize();
+  const byVehicle={};
+  steps.forEach(s=>{if(!byVehicle[s.vehicle_id])byVehicle[s.vehicle_id]=[];byVehicle[s.vehicle_id].push(s);});
+  const vehicleIds=Object.keys(byVehicle);
+
+  // Draw static context: facilities + bins
+  const facs=await api('GET','/api/facilities');
+  if(facs&&!facs.error)facs.forEach(f=>{
+    L.marker([f.lat,f.lon],{icon:L.divIcon({className:'',html:`<div style="font-size:20px">🏭</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).addTo(simPopupMap);
+  });
+  const bins=await api('GET','/api/bins');
+  if(bins&&!bins.error)bins.forEach(b=>{
+    if(!b.lat||!b.lon)return;
+    L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:`<div style="font-size:14px;opacity:.65">🗑️</div>`,iconSize:[18,18],iconAnchor:[9,9]})})
+      .addTo(simPopupMap).bindTooltip(`Bin ${b.bin_id}`,{sticky:true});
+  });
+
+  const promises=vehicleIds.map(async(vid,vi)=>{
+    const vsteps=byVehicle[vid];
+    const col=TRUCK_COLORS[vi%TRUCK_COLORS.length];
+    const isHaz=vsteps.some(s=>s.has_hazardous);
+    const label=`V${vid}${isHaz?' ☢':''}`;
+    const truckIcon=L.divIcon({className:'',html:makeTruckSvg(col,label),iconSize:[56,48],iconAnchor:[28,32]});
+    const firstStep=vsteps[0];
+    const marker=L.marker([firstStep.lat,firstStep.lon],{icon:truckIcon,zIndexOffset:1000}).addTo(simPopupMap);
+    simTruckMarkers[vid]=marker;
+
+    for(let i=0;i<vsteps.length;i++){
+      const s=vsteps[i];
+      const delay=Math.max(250,800-vehicleIds.length*60);
+      if(i>0){
+        const prev=vsteps[i-1];
+        const INTERP=8;
+        for(let k=1;k<=INTERP;k++){
+          const t=k/INTERP;
+          marker.setLatLng([prev.lat+(s.lat-prev.lat)*t,prev.lon+(s.lon-prev.lon)*t]);
+          await new Promise(res=>setTimeout(res,delay/INTERP));
+        }
+        // White outline for visibility against dark tiles
+        L.polyline([[prev.lat,prev.lon],[s.lat,s.lon]],{color:'#ffffff',weight:7,opacity:.25}).addTo(simPopupMap);
+        L.polyline([[prev.lat,prev.lon],[s.lat,s.lon]],{color:col,weight:3.5,opacity:.95,dashArray:isHaz?'8,4':null}).addTo(simPopupMap);
+      }else{
+        marker.setLatLng([s.lat,s.lon]);
+        await new Promise(res=>setTimeout(res,delay));
+      }
+      if(s.bin_collected){
+        marker.bindPopup(`<b>V${vid}</b> — Bin #${s.bin_collected} ✓`,{autoClose:true}).openPopup();
+        setTimeout(()=>marker.closePopup(),1200);
+      }
+      document.getElementById('sim-popup-status').textContent=
+        `Vehicle ${vid}: step ${s.step_index+1}/${s.total_steps}${s.bin_collected?' — Bin #'+s.bin_collected+' collected':''}${isHaz?' | ☢️':''}`;
+      document.getElementById('sim-popup-progress').textContent=`${vehicleIds.length} truck(s) active`;
+    }
+    marker.setOpacity(0.4);
+  });
+  await Promise.all(promises);
+  document.getElementById('sim-popup-status').textContent='✅ All routes completed!';
+  document.getElementById('sim-popup-progress').textContent='Done';
+  await new Promise(res=>setTimeout(res,2000));
+  closeSimPopup();
+}
+
+// ── Routes ──
+async function loadRoutes(){
+  const routes=await api('GET','/api/routes');
+  const c=document.getElementById('route-cards');
+  if(!routes||routes.error||!routes.length){c.innerHTML='<p style="color:var(--muted)">No routes. Run simulation first.</p>';return;}
+  c.innerHTML='';
+  routes.slice().reverse().forEach(r=>{
+    const co2=(r.fuel_required?r.fuel_required*2.68:0).toFixed(1);
+    c.innerHTML+=`<div class="route-card" style="${r.has_hazardous?'border-color:#c084fc55;background:#1a0a2a':''}">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <div><strong>Route #${r.route_id}</strong>
+          ${r.emergency?'<span class="badge b-emg">EMERGENCY</span>':''}
+          ${r.has_hazardous?'<span class="badge b-hazard">☢️ HAZARDOUS</span>':''}
+          ${r.completed?'<span class="badge b-done">✓ Done</span>':'<span class="badge b-high">⏳ Pending</span>'}</div>
+        <div style="font-size:.72rem;color:var(--muted)">${r.created_at||''}</div>
+      </div>
+      <div class="route-path">${r.route_string||'—'}</div>
+      <div class="route-meta">
+        <span>🚛 V${r.vehicle_id}</span><span>🗑️ ${r.bin_count} bins</span>
+        <span>📍 ${r.disposal_site||'—'}</span><span>📏 ${(r.total_distance||0).toFixed(2)} km</span>
+        <span>⛽ ${(r.fuel_required||0).toFixed(2)} L</span><span>🏋️ ${(r.total_waste_kg||0).toFixed(1)} kg</span>
+        <span>💰 ₹${(r.total_cost||0).toFixed(2)}</span>
+        <span style="color:#c084fc">🌿 ${co2} kg CO₂</span>
+      </div>
+    </div>`;
+  });
+}
+async function clearRoutes(){await api('DELETE','/api/routes');loadRoutes();toast('Completed routes cleared');}
+
+// ── Bins ──
+let allBins=[];
+
+/* Recompute priority_order client-side based on current fill_level.
+   ALL uncollected bins are ranked by priority desc then fill_level desc.
+   Collected bins go to the bottom (priority_order=0). */
+function recomputePriorityOrder(bins){
+  // Update priority level based on fill first
+  bins.forEach(b=>{
+    if(b.collected_today){b.priority=0;return;}
+    const f=b.fill_level||0;
+    if(f>=100)b.priority=3;
+    else if(f>=(b.threshold||70)+15)b.priority=2;
+    else if(f>=(b.threshold||70))b.priority=1;
+    else b.priority=0;
+  });
+  // Rank ALL uncollected bins: priority desc, then fill_level desc
+  const uncollected=bins
+    .filter(b=>!b.collected_today)
+    .sort((a,b2)=>{
+      const pd=(b2.priority||0)-(a.priority||0);
+      if(pd!==0)return pd;
+      return (b2.fill_level||0)-(a.fill_level||0);
+    });
+  bins.forEach(b=>b.priority_order=0);
+  uncollected.forEach((b,i)=>b.priority_order=i+1);
+}
+
+function onWasteKindChange(){
+  const v=document.getElementById('bw-kind').value;
+  document.getElementById('hazard-warning').style.display=v==='hazardous'?'block':'none';
+}
+async function loadBinsTable(){
+  allBins=await api('GET','/api/bins');
+  if(!allBins||allBins.error)return;
+  recomputePriorityOrder(allBins);
+  renderBinsTable(allBins);
+}
+function renderBinsTable(bins){
+  const PL={0:'b-normal',1:'b-high',2:'b-critical',3:'b-overflow'};
+  const PN={0:'Normal',1:'High',2:'Critical',3:'Overflow'};
+  const WB={dry:'#1a3a2a',wet:'#1a2540',mixed:'#3a2a00',hazardous:'#2a1a3a'};
+  const WT={dry:'#4ade80',wet:'#60a5fa',mixed:'#ffd166',hazardous:'#c084fc'};
+  const tb=document.getElementById('bins-tbl');tb.innerHTML='';
+  /* Sort by priority_order (1=most urgent first), then uncollected, then collected at bottom */
+  const sorted=[...bins].sort((a,b2)=>{
+    const ao=a.priority_order||999, bo=b2.priority_order||999;
+    if(a.collected_today&&!b2.collected_today)return 1;
+    if(!a.collected_today&&b2.collected_today)return -1;
+    return ao-bo;
+  });
+  sorted.forEach((b,idx)=>{
+    const p=b.collected_today?0:(b.priority??0);
+    const isHaz=b.waste_type==='hazardous';
+    const wt=b.waste_type||'mixed';
+    const wBg=WB[wt]||WB.mixed; const wTx=WT[wt]||WT.mixed;
+    /* Priority order badge — only for bins needing collection */
+    const orderBadge=b.priority_order&&!b.collected_today
+      ?`<span style="display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;background:#252840;border-radius:50%;font-weight:700;font-size:.72rem;color:var(--accent)">${b.priority_order}</span>`
+      :`<span style="color:var(--muted);font-size:.7rem">—</span>`;
+    /* Row highlight for top priority */
+    const rowStyle=b.collected_today?'opacity:.65;':'';
+    tb.innerHTML+=`<tr style="${rowStyle}">
+      <td style="color:var(--muted);font-size:.75rem">${idx+1}</td>
+      <td>${orderBadge}</td>
+      <td><strong>${b.bin_id}</strong></td><td>${b.location}</td><td>${b.zone}</td>
+      <td>${(b.fill_level||0).toFixed(1)}%</td><td>${b.capacity_kg} kg</td>
+      <td><span style="background:${wBg};color:${wTx};padding:.12rem .45rem;border-radius:4px;font-size:.65rem;font-weight:700">${wt.toUpperCase()}</span></td>
+      <td>${isHaz?'<span class="badge b-hazard">☢️ Yes</span>':'—'}</td>
+      <td>${b.threshold}%</td><td><span class="badge ${PL[p]}">${PN[p]}</span></td>
+      <td>${b.citizen_report_count||0}</td><td>${b.fill_rate}%/day</td>
+      <td>${b.collected_today?'<span style="color:#4ade80;font-weight:700">✓ Cleared</span>':'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteBin(${b.bin_id})">Del</button></td>
+    </tr>`;
+  });
+}
+function filterBinsTable(q){
+  if(!allBins.length)return;
+  if(!q){renderBinsTable(allBins);return;}
+  q=q.toLowerCase();
+  renderBinsTable(allBins.filter(b=>b.location.toLowerCase().includes(q)||b.zone.toLowerCase().includes(q)||String(b.bin_id).includes(q)||b.waste_type.toLowerCase().includes(q)));
+}
+async function addBin(){
+  const b={bin_id:+document.getElementById('b-id').value,location:document.getElementById('b-loc').value,zone:document.getElementById('b-zone').value,waste_type:document.getElementById('b-type').value,capacity_kg:+document.getElementById('b-cap').value||500,fill_level:+document.getElementById('b-fill').value||0,threshold:+document.getElementById('b-thresh').value||75,lat:+document.getElementById('b-lat').value||0,lon:+document.getElementById('b-lon').value||0,fill_rate:+document.getElementById('b-rate').value||10};
+  const r=await api('POST','/api/bins',b);
+  toast(r.message||r.error||'Error',r.success?'info':'error');
+  if(r.success)loadBinsTable();
+}
+async function deleteBin(id){if(!confirm('Delete bin '+id+'?'))return;await api('DELETE','/api/bins',{bin_id:id});loadBinsTable();toast('Bin '+id+' deleted');}
+async function addWasteToBin(){
+  const bid=+document.getElementById('bw-bin').value;
+  const kg=+document.getElementById('bw-kg').value;
+  const kind=document.getElementById('bw-kind').value;
+  if(!bid||!kg){alert('Enter bin ID and kg');return;}
+  const r=await api('POST','/api/bins/addwaste',{bin_id:bid,kg});
+  const el=document.getElementById('bw-result');
+  if(r.success){
+    el.textContent=`Bin ${bid}: ${r.fill_level?.toFixed(1)}% (${['Normal','High','Critical','Overflow'][r.priority]})${kind==='hazardous'?' ☢️':''}`;
+    allBins=await api('GET','/api/bins');
+    if(allBins&&!allBins.error){recomputePriorityOrder(allBins);renderBinsTable(allBins);}
+    toast(`Added ${kg}kg${kind==='hazardous'?' ☢️ hazardous':''} to Bin ${bid}`,'warn');
+  }else{el.textContent=r.error||'Error';toast(r.error||'Error','error');}
+}
+
+// ── Vehicles ──
+async function loadVehiclesTable(){
+  const vs=await api('GET','/api/vehicles');
+  if(!vs||vs.error)return;
+  const tb=document.getElementById('vehicles-tbl');tb.innerHTML='';
+  vs.forEach(v=>{
+    const stCls={'idle':'b-idle','collecting':'b-collecting','maintenance':'b-maintenance','breakdown':'b-emg'}[v.status]||'b-idle';
+    const loadBar=`<div style="display:flex;align-items:center;gap:.3rem"><div class="fbar"><div class="fbar-i" style="width:${Math.min(100,v.load_pct||0)}%;background:${v.load_pct>80?'#ff4d6d':'#ffd166'}"></div></div>${(v.current_load||0).toFixed(0)}kg</div>`;
+    const fuelBar=`<div style="display:flex;align-items:center;gap:.3rem"><div class="fbar"><div class="fbar-i" style="width:${v.fuel_pct||0}%;background:${v.fuel_pct<20?'#ff4d6d':v.fuel_pct<50?'#ffd166':'#00d4aa'}"></div></div>${(v.fuel_level||0).toFixed(1)}L</div>`;
+    tb.innerHTML+=`<tr>
+      <td><strong>${v.vehicle_id}</strong></td><td>${v.plate}</td>
+      <td><span class="badge b-idle">${v.vehicle_class}</span></td>
+      <td>${v.zone}</td><td>${loadBar}</td><td>${fuelBar}</td>
+      <td style="color:#c084fc">${(v.co2_kg||0).toFixed(1)}</td>
+      <td><span class="badge ${stCls}">${v.status||'idle'}</span>${v.assigned_route?`<span style="margin-left:.3rem;font-size:.68rem;color:var(--accent);background:#1a2a3a;padding:.1rem .35rem;border-radius:4px;font-weight:600">Rt#${v.assigned_route}</span>`:''}</td>
+      <td>${v.hazard_capable?'<span class="badge b-hazard">☢️ Yes</span>':'—'}</td>
+      <td>${v.needs_maintenance?'<span class="badge b-critical">⚠ Needed</span>':'<span class="badge b-idle">✓ OK</span>'}</td>
+      <td>${(v.lifetime_km||0).toFixed(0)} km</td>
+      <td style="display:flex;gap:.3rem;flex-wrap:wrap">
+        ${v.needs_maintenance||v.status==='breakdown'?`<button class="btn btn-warn btn-sm" onclick="resolveBreakdown(${v.vehicle_id})">🔧 Fix</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="deleteVehicle(${v.vehicle_id})">Del</button>
+      </td>
+    </tr>`;
+  });
+}
+async function addVehicle(){
+  const v={vehicle_id:+document.getElementById('v-id').value,plate:document.getElementById('v-plate').value,vehicle_class:document.getElementById('v-class').value,capacity_kg:+document.getElementById('v-cap').value||5000,fuel_level:+document.getElementById('v-fuel').value||80,fuel_capacity:+document.getElementById('v-fcap').value||100,fuel_rate:+document.getElementById('v-frate').value||0.12,zone:document.getElementById('v-zone').value,available:1,driver_id:+document.getElementById('v-driver').value||0,maintenance_due_km:+document.getElementById('v-maint').value||500,hazard_capable:+document.getElementById('v-hazard').value||0};
+  const r=await api('POST','/api/vehicles',v);
+  toast(r.message||r.error,'info');if(r.success)loadVehiclesTable();
+}
+async function resolveBreakdown(vid){
+  const r=await api('POST','/api/vehicles/resolve_breakdown',{vehicle_id:vid});
+  if(r.success){toast('V'+vid+' breakdown cleared — refuel to restore service','warn');loadVehiclesTable();}
+  else toast(r.error||'Failed','error');
+}
+async function refuelVehicle(){const r=await api('PUT','/api/vehicles',{vehicle_id:+document.getElementById('rf-vid').value,litres:+document.getElementById('rf-l').value});toast(r.message||r.error);loadVehiclesTable();}
+async function serviceVehicle(){const r=await api('PUT','/api/vehicles',{vehicle_id:+document.getElementById('svc-vid').value,service:1,litres:0});toast(r.message||r.error);loadVehiclesTable();}
+async function deleteVehicle(id){if(!confirm('Delete vehicle '+id+'?'))return;await api('DELETE','/api/vehicles',{vehicle_id:id});loadVehiclesTable();}
+async function resetAllVehicles(){
+  if(!confirm('Reset all vehicles to idle/available status?'))return;
+  await api('POST','/api/newday');toast('All vehicles reset','info');loadVehiclesTable();
+}
+
+// ── Drivers ──
+async function loadDriversTable(){
+  const ds=await api('GET','/api/drivers');
+  if(!ds||ds.error)return;
+  const sc={morning:0,evening:0};
+  ds.forEach(d=>{if(sc[d.shift]!==undefined)sc[d.shift]++;});
+  document.getElementById('shift-summary').innerHTML=
+    [['morning','var(--warn)'],['evening','var(--info)']].map(([s,c])=>
+      `<div style="background:#1a2a3a;border-radius:8px;padding:.5rem .9rem;font-size:.78rem"><div style="color:${c};font-weight:700">${sc[s]}</div><div style="color:var(--muted);font-size:.65rem">${s.toUpperCase()}</div></div>`
+    ).join('')+
+    `<div style="background:#1a2a3a;border-radius:8px;padding:.5rem .9rem;font-size:.78rem"><div style="color:#c084fc;font-weight:700">${ds.filter(d=>d.is_substitute).length}</div><div style="color:var(--muted);font-size:.65rem">SUBSTITUTES</div></div>`;
+  const tb=document.getElementById('drivers-tbl');tb.innerHTML='';
+  ds.forEach(d=>{
+    const shiftCol={morning:'color:var(--warn)',evening:'color:var(--info)'}[d.shift]||'';
+    const pct=d.max_hours>0?Math.min(100,d.hours_worked/d.max_hours*100):0;
+    const hBar=`<div style="display:flex;align-items:center;gap:.3rem"><div class="fbar"><div class="fbar-i" style="width:${pct}%;background:${pct>=100?'#ff4d6d':pct>=75?'#ffd166':'#00d4aa'}"></div></div>${d.hours_worked?.toFixed(1)}h</div>`;
+    const dStatus = d.on_leave
+      ? '<span class="badge b-emg">ON LEAVE</span>'
+      : d.available
+        ? '<span class="badge b-idle">Available</span>'
+        : '<span class="badge b-critical">Exhausted</span>';
+    tb.innerHTML+=`<tr>
+      <td><strong>${d.driver_id}</strong></td><td>${d.name}</td>
+      <td><span style="${shiftCol};font-weight:600">${d.shift}</span></td>
+      <td>${d.is_substitute?'<span class="badge b-high">Sub</span>':'<span class="badge b-idle">Regular</span>'}</td>
+      <td>${d.vehicle_id||'—'}</td><td>${hBar}</td>
+      <td>${d.max_hours?.toFixed(0)}h</td><td>${(d.overtime_hours||0).toFixed(1)}h</td>
+      <td>₹${d.salary_per_hour?.toFixed(2)}</td>
+      <td>${dStatus}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteDriver(${d.driver_id})">Del</button></td>
+    </tr>`;
+  });
+}
+async function loadAbsenceList() {
+  const ab = await api('GET','/api/drivers/absences');
+  const el = document.getElementById('absence-list');
+  if (!el) return;
+  if (!ab||ab.error||!ab.length) { el.textContent='No drivers currently on leave.'; return; }
+  el.innerHTML = ab.map(d=>
+    `<span style="margin-right:.8rem;padding:.2rem .5rem;background:#3a0015;border-radius:4px;">
+      D${d.driver_id} ${d.name} — <em>${d.leave_reason}</em> (${d.absent_days}d absent)
+     </span>`
+  ).join('');
+}
+async function markDriverLeave() {
+  const did=+document.getElementById('leave-did').value;
+  const reason=document.getElementById('leave-reason').value;
+  if(!did){toast('Enter driver ID','error');return;}
+  const r=await api('POST','/api/drivers/leave',{driver_id:did,reason});
+  const el=document.getElementById('leave-result');
+  if(r.success){el.textContent='✓ '+r.message;toast('Driver '+did+' marked absent','warn');loadDriversTable();}
+  else{el.textContent=r.error||'Error';toast(r.error||'Error','error');}
+}
+async function markDriverReturn() {
+  const did=+document.getElementById('return-did').value;
+  if(!did){toast('Enter driver ID','error');return;}
+  const r=await api('POST','/api/drivers/return',{driver_id:did});
+  const el=document.getElementById('return-result');
+  if(r.success){el.textContent='✓ Returned';toast('Driver '+did+' returned','info');loadDriversTable();}
+  else{el.textContent=r.error||'Error';toast(r.error||'Error','error');}
+}
+async function addDriver(){
+  const d={driver_id:+document.getElementById('d-id').value,name:document.getElementById('d-name').value,license:document.getElementById('d-lic').value,shift:document.getElementById('d-shift').value,is_substitute:+document.getElementById('d-sub').value,vehicle_id:+document.getElementById('d-vid').value||0,salary_per_hour:+document.getElementById('d-sal').value||15,max_hours:+document.getElementById('d-maxh').value||8};
+  const r=await api('POST','/api/drivers',d);
+  toast(r.message||r.error);if(r.success)loadDriversTable();
+}
+async function redistributeShifts(){await api('POST','/api/newday');loadDriversTable();toast('Shifts redistributed evenly');}
+async function deleteDriver(id){if(!confirm('Delete driver '+id+'?'))return;await api('DELETE','/api/drivers',{driver_id:id});loadDriversTable();}
+async function resetAllDrivers(){if(!confirm('Reset driver hours to zero?'))return;await api('POST','/api/newday');loadDriversTable();toast('Driver hours reset','info');}
+
+// ── Emergency ──
+async function doEmergency(){
+  const bid=+document.getElementById('emg-bin').value;
+  const reason=document.getElementById('emg-reason').value||'overflow';
+  if(!bid){alert('Enter bin ID');return;}
+  const r=await api('POST','/api/emergency',{bin_id:bid,reason});
+  const box=document.getElementById('emg-result');
+  box.style.display='block';
+  box.style.background=r.success?'#0d2018':'#2a0a0a';
+  box.style.borderLeft=`3px solid ${r.success?'var(--accent)':'var(--danger)'}`;
+  box.textContent=r.message;
+  if(r.success){toast('Emergency dispatched: V'+r.vehicle_id,'warn');loadDashboard();}
+  else toast(r.message,'error');
+}
+async function doHazardousEmergency(){
+  const bid=+document.getElementById('hemg-bin').value;
+  if(!bid){alert('Enter bin ID');return;}
+  const r=await api('POST','/api/emergency',{bin_id:bid,reason:'hazardous'});
+  const box=document.getElementById('hemg-result');
+  box.style.display='block';
+  box.style.background=r.success?'#1e0a2a':'#2a0a0a';
+  box.style.borderLeft=`3px solid ${r.success?'#c084fc':'var(--danger)'}`;
+  box.textContent=r.message+(r.vehicle_id?' (V'+r.vehicle_id+' dispatched)':'');
+  if(r.success){toast('☢️ Hazardous dispatch: V'+r.vehicle_id,'warn');loadDashboard();}
+  else toast(r.message,'error');
+}
+
+// ── Citizen Reports ──
+async function submitCitizenReport(){
+  const bin_id=+document.getElementById('cr-bin').value;
+  const report_type=+document.getElementById('cr-type').value;
+  const reporter_name=document.getElementById('cr-name').value||'Anonymous';
+  const description=document.getElementById('cr-desc').value;
+  if(!bin_id){toast('Enter a valid bin ID','error');return;}
+  const el=document.getElementById('cr-result');
+  el.innerHTML=`<span style="color:var(--muted);font-size:.78rem">⏳ Submitting & assigning vehicle...</span>`;
+
+  /* Step 1: submit report with auto_dispatch */
+  const r=await api('POST','/api/citizen/report',{bin_id,report_type,reporter_name,description,auto_dispatch:1});
+  if(!r.success){el.style.color='var(--danger)';el.textContent=r.error||'Failed';toast(r.error||'Failed','error');return;}
+
+  /* Step 2: if not dispatched from report, force emergency call */
+  let dispatched=r.dispatched;
+  let vid=r.emergency_vehicle_id||r.vehicle_id||0;
+  let rid=r.emergency_route_id||r.route_id||0;
+  let dist=r.emergency_distance_km??r.distance_km??null;
+  let routePath=r.route_path&&r.route_path!=='pending'?r.route_path:'';
+
+  if(!dispatched){
+    const er=await api('POST','/api/emergency',{bin_id,reason:['overflow','vandalized','hazard','full'][report_type]||'overflow'});
+    if(er.success){
+      dispatched=true;
+      vid=er.vehicle_id||vid;
+      rid=er.route_id||rid;
+      dist=er.distance_km??dist;
+      routePath=er.route_string||routePath;
+    }
+  }
+
+  /* Step 3: always mark bin cleared in UI — a vehicle is on its way */
+  const routeInfo=rid>0
+    ?`Route #${rid} · Vehicle V${vid}${dist!==null?' · '+parseFloat(dist).toFixed(1)+'km':''}`
+    :(vid?`Vehicle V${vid} assigned`:'Vehicle assigned');
+  const rPathHtml=routePath&&routePath!=='pending'
+    ?`<div style="font-size:.7rem;color:var(--muted);margin-top:.4rem;word-break:break-all;line-height:1.5">🛣️ ${routePath}</div>`:'';
+
+  el.innerHTML=`<div style="margin-top:.6rem;background:#0d2b0d;border:1px solid #4ade8099;border-radius:8px;padding:.9rem;">
+    <div style="color:#4ade80;font-weight:700;margin-bottom:.5rem;font-size:.88rem">✅ Vehicle Assigned & Route Created!</div>
+    <div style="font-size:.78rem;color:var(--text);margin-bottom:.3rem">Report #${r.report_id} · Bin ${bin_id} · <b>${(['OVERFLOW','VANDALIZED','HAZARD','FULL'][report_type]||'REPORT')}</b></div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem">
+      ${vid?`<span style="background:#1a3a1a;color:#4ade80;padding:.2rem .55rem;border-radius:20px;font-size:.72rem;font-weight:700">🚛 V${vid}</span>`:''}
+      <span style="background:#1a2a3a;color:var(--accent);padding:.2rem .55rem;border-radius:20px;font-size:.72rem;font-weight:700">📍 ${routeInfo}</span>
+      <span style="background:#3a2a00;color:var(--warn);padding:.2rem .55rem;border-radius:20px;font-size:.72rem;font-weight:700">🗑️ Bin ${bin_id} Sorted</span>
+    </div>
+    ${rPathHtml}
+  </div>`;
+  toast(`🚨 Vehicle dispatched for Bin ${bin_id}!`,'warn');
+
+  /* Update bins table immediately — mark as cleared/green */
+  if(allBins&&allBins.length){
+    const b=allBins.find(x=>x.bin_id===bin_id);
+    if(b){b.collected_today=1;b.fill_level=0;b.priority=0;recomputePriorityOrder(allBins);renderBinsTable(allBins);}
+  }
+  loadCitizenReports();loadDashboard();
+  setTimeout(()=>{refreshMap();loadBinsTable();},1500);
+}
+async function loadCitizenReports(){
+  const cs=await api('GET','/api/citizen/summary');
+  if(cs&&!cs.error){
+    ['total','open','resolved','dispatched'].forEach(k=>document.getElementById('ck-'+k).textContent=cs[k]??0);
+    document.getElementById('ck-hazard').textContent=cs.by_type?.hazard??0;
+    document.getElementById('ck-vandal').textContent=cs.vandalized_bins??0;
+  }
+  const reports=await api('GET','/api/citizen/reports',{n:100});
+  if(!reports||reports.error){document.getElementById('citizen-list').innerHTML='<p style="color:var(--muted)">No reports yet.</p>';return;}
+  const tf=document.getElementById('cr-filter').value;
+  const sf=document.getElementById('cr-status').value;
+  const ti={overflow:'🔴',vandalized:'🟠',hazard:'☢️',full:'🟡'};
+  const tc={overflow:'rtype-overflow',vandalized:'rtype-vandalized',hazard:'rtype-hazard',full:'rtype-full'};
+  const urg={overflow:true,vandalized:true,hazard:true,full:false};
+  let filtered=reports.filter(r=>{
+    if(tf&&r.reason!==tf)return false;
+    if(sf==='open'&&r.resolved)return false;
+    if(sf==='resolved'&&!r.resolved)return false;
+    return true;
+  });
+  if(!filtered.length){document.getElementById('citizen-list').innerHTML='<p style="color:var(--muted)">No reports match filters.</p>';return;}
+  document.getElementById('citizen-list').innerHTML=filtered.slice().reverse().map(r=>{
+    const isU=urg[r.reason]&&!r.resolved;
+    const cls='citizen-card'+(isU?' urgent':r.reason==='full'?' moderate':'');
+    const sb=r.resolved?'<span class="badge b-done">✓ Resolved</span>':r.dispatched?'<span class="badge b-emg">🚨 Dispatched</span>':'<span class="badge b-high">Open</span>';
+    return `<div class="${cls}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <span style="font-size:1.3rem">${ti[r.reason]||'📢'}</span>
+          <div>
+            <div style="font-weight:700;font-size:.85rem"><span class="${tc[r.reason]||''}">${r.reason.toUpperCase()}</span> — Bin #${r.bin_id} <span style="color:var(--muted);font-weight:400;font-size:.75rem">${r.location||''}</span></div>
+            <div style="font-size:.75rem;color:var(--muted)">by ${r.reporter_name} · ${r.timestamp}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:.4rem;align-items:center">
+          ${sb}${!r.resolved?`<button class="btn btn-ghost btn-sm" onclick="resolveCitizenReport(${r.report_id})">✓ Resolve</button>`:''}
+        </div>
+      </div>
+      ${r.description&&r.description!=='(no description)'?`<div style="margin-top:.4rem;font-size:.78rem;color:var(--muted);padding:.4rem .6rem;background:#252840;border-radius:5px">${r.description}</div>`:''}
+    </div>`;
+  }).join('');
+}
+async function resolveCitizenReport(rid){
+  const r=await api('POST','/api/citizen/resolve',{report_id:rid});
+  if(r.success){toast('Report #'+rid+' resolved');loadCitizenReports();loadDashboard();}
+  else toast(r.error||'Failed','error');
+}
+
+// ── Reports ──
+function rrow(l,v,u=''){return `<div class="report-row"><span>${l}</span><span class="rval">${v}${u?' '+u:''}</span></div>`;}
+async function loadAllReports(){
+  const d=await api('GET','/api/reports/daily');
+  if(d&&!d.error)document.getElementById('rpt-daily').innerHTML=`<h3>📅 Daily Summary — ${d.date||'Today'}</h3>
+    ${rrow('Bins Collected',d.bins_collected)}${rrow('Routes Completed',d.routes_completed)}
+    ${rrow('Distance',d.distance_km?.toFixed(1),'km')}${rrow('Fuel Used',d.fuel_used?.toFixed(2),'L')}
+    ${rrow('Fuel Cost','₹'+d.fuel_cost?.toFixed(2))}${rrow('Labor Cost','₹'+d.labor_cost?.toFixed(2))}
+    ${rrow('Total Cost','₹'+d.total_cost?.toFixed(2))}${rrow('Emergencies',d.emergencies)}
+    ${rrow('Hazard Collections',d.hazard_collections||0)}${rrow('CO₂ Emitted',(d.co2_kg||0).toFixed(1),'kg')}
+    ${rrow('Simulations Run',d.simulations)}`;
+  const f=await api('GET','/api/reports/fuel');
+  if(f&&!f.error)document.getElementById('rpt-fuel').innerHTML=`<h3>⛽ Fuel Report</h3>
+    ${rrow('Total Consumed',f.total_fuel_used?.toFixed(2),'L')}${rrow('Fuel Cost','₹'+f.total_fuel_cost?.toFixed(2))}
+    ${rrow('Active Vehicles',f.vehicles)}${rrow('Avg/Vehicle',f.avg_fuel_per_vehicle?.toFixed(2),'L')}
+    ${rrow('Total Distance',f.total_distance?.toFixed(1),'km')}${rrow('Efficiency',f.avg_km_per_litre?.toFixed(2),'km/L')}`;
+  const c=await api('GET','/api/reports/cost');
+  if(c&&!c.error)document.getElementById('rpt-cost').innerHTML=`<h3>💰 Cost Report</h3>
+    ${rrow('Total','₹'+c.total_cost?.toFixed(2))}${rrow('Fuel','₹'+c.fuel_cost?.toFixed(2))}
+    ${rrow('Labor','₹'+c.labor_cost?.toFixed(2))}${rrow('Per Bin','₹'+c.cost_per_bin?.toFixed(2))}
+    ${rrow('Per km','₹'+c.cost_per_km?.toFixed(2))}`;
+  const rc=await api('GET','/api/reports/recycling');
+  if(rc&&!rc.error)document.getElementById('rpt-recycling').innerHTML=`<h3>♻️ Recycling & Waste Processing</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.6rem">
+      <div style="background:#1a2a1a;border-radius:6px;padding:.6rem;border:1px solid #4ade8033">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem">♻️ Recyclable</div>
+        <div style="font-size:1.2rem;font-weight:700;color:#4ade80">${(rc.recyclable_kg||0).toFixed(1)} kg</div>
+      </div>
+      <div style="background:#2a1a1a;border-radius:6px;padding:.6rem;border:1px solid #ff4d6d33">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem">🗑️ Non-Recyclable</div>
+        <div style="font-size:1.2rem;font-weight:700;color:#ff4d6d">${(rc.non_recyclable_kg||0).toFixed(1)} kg</div>
+      </div>
+      <div style="background:#2a2a1a;border-radius:6px;padding:.6rem;border:1px solid #ffd16633">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem">🏭 Sent to Landfill</div>
+        <div style="font-size:1.2rem;font-weight:700;color:#ffd166">${(rc.landfill_kg||0).toFixed(1)} kg</div>
+      </div>
+      <div style="background:#1a2a2a;border-radius:6px;padding:.6rem;border:1px solid #60a5fa33">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem">📊 Recycling Efficiency</div>
+        <div style="font-size:1.2rem;font-weight:700;color:#60a5fa">${(rc.recycling_pct||0).toFixed(1)}%</div>
+      </div>
+    </div>
+    <div style="font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;margin:.5rem 0 .3rem">Waste Segregation Breakdown</div>
+    ${rrow('🟤 Dry (Recyclable)',rc.dry_kg?.toFixed(1),'kg')}
+    ${rrow('💧 Wet',rc.wet_kg?.toFixed(1),'kg')}
+    ${rrow('🔀 Mixed',rc.mixed_kg?.toFixed(1),'kg')}
+    ${rrow('☢️ Hazardous',rc.hazardous_kg?.toFixed(1),'kg')}
+    ${rrow('📦 Total Collected',rc.total_kg?.toFixed(1),'kg')}
+    ${rrow('📂 Segregation Rate',rc.segregation_pct?.toFixed(1),'%')}
+    <div style="margin-top:.6rem;padding:.7rem;background:#1a0a2a;border-radius:8px;border:1px solid #c084fc33">
+      <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem">🌿 Environmental Impact</div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap">
+        <div><div style="font-size:.65rem;color:var(--muted)">CO₂ Emitted</div><div style="font-size:1.1rem;font-weight:700;color:#c084fc">${(rc.co2_emitted_kg||0).toFixed(2)} kg</div></div>
+        <div><div style="font-size:.65rem;color:var(--muted)">CO₂ Saved by Recycling</div><div style="font-size:1.1rem;font-weight:700;color:#4ade80">${(rc.co2_saved_kg||0).toFixed(2)} kg</div></div>
+      </div>
+    </div>`;
+  const z=await api('GET','/api/reports/zone');
+  if(z&&!z.error&&Array.isArray(z)){
+    let html='<div class="tbl-wrap"><table><thead><tr><th>Zone</th><th>Total</th><th>Critical</th><th>Collected</th><th>Pending</th><th>Status</th></tr></thead><tbody>';
+    z.forEach(zn=>html+=`<tr><td><strong>${zn.zone}</strong></td><td>${zn.total}</td><td>${zn.critical}</td><td>${zn.collected}</td><td>${zn.pending}</td><td>${zn.collected===zn.total?'<span class="badge b-done">✓ Done</span>':zn.critical?'<span class="badge b-critical">Needs Collection</span>':'<span class="badge b-normal">OK</span>'}</td></tr>`);
+    document.getElementById('rpt-zone').innerHTML='<h3>📍 Zone Report</h3>'+html+'</tbody></table></div>';
+  }
+  const m=await api('GET','/api/reports/maintenance');
+  if(m&&!m.error&&Array.isArray(m)){
+    let html='<div class="tbl-wrap"><table><thead><tr><th>Vehicle</th><th>Plate</th><th>Lifetime km</th><th>Today km</th><th>Maint. Due</th><th>Fuel %</th><th>Status</th></tr></thead><tbody>';
+    m.forEach(v=>html+=`<tr><td>${v.vehicle_id}</td><td>${v.plate}</td><td>${v.lifetime_km?.toFixed(0)}</td><td>${v.daily_km?.toFixed(1)}</td><td>${v.maintenance_due_km}</td><td>${v.fuel_pct?.toFixed(0)}%</td><td>${v.needs_maintenance?'<span class="badge b-critical">⚠ Needed</span>':'<span class="badge b-idle">OK</span>'}</td></tr>`);
+    document.getElementById('rpt-maint').innerHTML='<h3>🔧 Maintenance Report</h3>'+html+'</tbody></table></div>';
+  }
+}
+
+// ── Log ──
+async function loadLog(){
+  const entries=await api('GET','/api/log');if(!entries||entries.error)return;
+  const filt=document.getElementById('log-filter')?.value||'';
+  const filtered=filt?entries.filter(e=>e.level===filt):entries;
+  const tb=document.getElementById('log-tbl');tb.innerHTML='';
+  filtered.slice().reverse().forEach(e=>{
+    tb.innerHTML+=`<tr><td style="white-space:nowrap;font-size:.7rem">${e.ts}</td>
+      <td><span class="log-level-${e.level}" style="font-size:.72rem;font-weight:700">${e.level}</span></td>
+      <td style="font-size:.72rem;color:var(--muted)">${e.module}</td>
+      <td style="font-size:.78rem">${e.msg}</td></tr>`;
+  });
+}
+
+// ── Facilities ──
+async function loadFacilities(){
+  const facs=await api('GET','/api/facilities');if(!facs||facs.error)return;
+  const tb=document.getElementById('fac-tbl');tb.innerHTML='';
+  const ft={garage:'🏭 Garage',disposal:'🗑️ Disposal',recycling:'♻️ Recycling',hazardous:'☢️ Hazardous'};
+  facs.forEach(f=>tb.innerHTML+=`<tr><td>${f.id}</td><td><strong>${f.name}</strong></td><td>${ft[f.type]||f.type}</td><td>${f.lat}</td><td>${f.lon}</td></tr>`);
+}
+
+</script>
+
+<!-- CONSTRAINTS -->
+  <div class="section-header">
+  </div>
+</div>
+
+</body>
+</html>

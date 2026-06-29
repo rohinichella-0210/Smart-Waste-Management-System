@@ -1,0 +1,21 @@
+bin_id,location,fill_level,capacity_kg,waste_type,threshold,zone,lat,lon,fill_rate,collected_today,last_collected,total_waste_collected
+1,Anna Nagar Tower Park,0.0,800,mixed,75,Zone-North,13.084900,80.210098,12.00,1,2026-05-08 20:20:41,800.0
+2,Koyambedu Market Complex,0.0,1200,wet,75,Zone-North,13.069400,80.194801,15.00,1,2026-05-08 20:20:41,956.0
+3,T Nagar Pondy Bazaar,0.0,600,dry,70,Zone-Central,13.041800,80.234100,10.00,1,,0.0
+4,Adyar Depot Road,0.0,500,wet,70,Zone-South,13.001200,80.256500,8.00,1,,0.0
+5,Besant Nagar Beach Road,0.0,400,dry,70,Zone-South,13.000200,80.270699,7.00,1,,0.0
+6,Tambaram Bus Terminus,0.0,1000,mixed,75,Zone-SWest,12.924900,80.099998,14.00,1,,0.0
+7,Chromepet Station Road,0.0,700,mixed,75,Zone-SWest,12.951600,80.146202,11.00,1,,0.0
+8,Velachery Main Road,0.0,800,wet,80,Zone-Central,12.981500,80.220901,16.00,1,2026-05-08 20:20:41,776.0
+9,Guindy Industrial Estate,0.0,600,hazardous,60,Zone-Central,13.006900,80.220596,9.00,1,2026-05-08 20:20:41,598.8
+10,Saidapet Arch,0.0,500,mixed,75,Zone-Central,13.019700,80.224197,10.00,1,,0.0
+11,Perambur Station Road,0.0,900,mixed,75,Zone-North,13.111500,80.235497,13.00,1,2026-05-08 20:20:41,900.0
+12,Tondiarpet Market,100.0,700,wet,75,Zone-NorthEast,13.127000,80.298302,12.00,1,,0.0
+13,Royapuram Fish Market,80.0,1000,wet,65,Zone-NorthEast,13.114600,80.301300,18.00,1,,0.0
+14,Egmore Station East,100.0,600,dry,70,Zone-Central,13.078400,80.262001,9.00,1,,0.0
+15,Mylapore Tank West,0.0,500,mixed,75,Zone-South,13.033500,80.268501,8.00,1,,0.0
+16,Vadapalani Bus Stand,62.5,800,dry,75,Zone-West,13.052200,80.211998,13.00,1,,0.0
+17,Porur Junction,0.0,600,mixed,75,Zone-West,13.035800,80.156700,9.00,1,2026-05-08 20:20:41,550.8
+18,Ambattur Industrial,0.0,900,hazardous,60,Zone-NWest,13.114500,80.156700,14.00,1,,0.0
+19,Avadi Town Centre,0.0,700,dry,75,Zone-NWest,13.106700,80.095596,10.00,1,,0.0
+20,Pallavaram Market,0.0,500,dry,70,Zone-SWest,12.970600,80.150803,8.00,1,,0.0
